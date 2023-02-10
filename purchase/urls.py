@@ -9,3 +9,11 @@ urlpatterns = [
     path('vendor/<int:pk>/update/', VendorUpdate.as_view(), name='vendor_update'),
     path('vendor/delete', VendorDelete.as_view(), name='vendor_delete'),
 ]
+
+
+from .views import ProductPurchaseCreateView, ProductPurchaseListView
+
+urlpatterns += [
+    path('purchase/create/', ProductPurchaseCreateView.as_view(), name="product_purchase_create"),
+    path('purchase/', ProductPurchaseListView.as_view(), name="product_purchase_list")
+]

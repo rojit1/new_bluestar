@@ -10,23 +10,30 @@ class Vendor(BaseModel):
     def __str__(self):
         return self.name
 
+class Purchase(BaseModel):
+    vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL, null=True)
+    products = models.ManyToManyField(Product, through='ProductPurchase')
+    purchase_date = models.DateField(auto_now=True, blank=True)
+    grand_amount = models.DecimalField(max_digits=9, decimal_places=2, null=True, blank=True)
 
-# class ProductPurchase(BaseModel):
-#     products = models.ForeignKey(Product, on_delete=models.CASCADE)
-#     purchases = models.ForeignKey('Purchase', on_delete=models.CASCADE)
-#     quantity = models.DecimalField(max_digits=10, decimal_places=2)
-
-#     def __str__(self):
-#         return f'{self.product.title} purchased X  {self.quantity}'
+    def __str__(self):
+        return f'Purchased from {self.vendor.name} total = {self.grand_amount}'
 
 
-# class Purchase(BaseModel):
-#     vendor = models.ForeignKey(Vendor, null=True, on_delete=models.SET_NULL)
-#     products = models.ManyToManyField(Product, blank=False, null=False)
-#     purchase_date = models.DateTimeField(auto_now_add=True)
 
-#     def __str__(self):
-#         return f'purchased {self.product.title} from {self.vendor.name}'
+class ProductPurchase(BaseModel):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    purchase = models.ForeignKey(Purchase, on_delete=models.CASCADE)
+    price = models.DecimalField(max_digits=9, decimal_places=2, null=True, blank=True)
+    quantity = models.IntegerField()
+    item_total = models.DecimalField(max_digits=9, decimal_places=2, null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.product.title} X {self.quantity}'
+
+
+
+
 
 
 

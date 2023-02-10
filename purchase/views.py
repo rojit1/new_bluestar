@@ -1,8 +1,8 @@
 from django.urls import reverse_lazy
-from django.views.generic import CreateView,DetailView,ListView,UpdateView,View
+from django.views.generic import CreateView,DetailView,ListView,UpdateView,View, TemplateView
 from root.utils import DeleteMixin
-from .models import Vendor
-from .forms import VendorForm
+from .models import Vendor, ProductPurchase
+from .forms import VendorForm, ProductPurchaseForm
 
 class VendorMixin:
     model = Vendor
@@ -31,3 +31,18 @@ class VendorUpdate(VendorMixin, UpdateView):
 
 class VendorDelete(VendorMixin, DeleteMixin, View):
     pass
+
+'''  -------------------------------------    '''
+
+class ProductPurchaseCreateView(CreateView):
+    model = ProductPurchase
+    form_class = ProductPurchaseForm
+    template_name = "purchase/purchase_create.html"
+
+    def post(self, request):
+        pass
+
+class ProductPurchaseListView(TemplateView):
+    template_name = 'purchase/purchase_list.html'
+
+
