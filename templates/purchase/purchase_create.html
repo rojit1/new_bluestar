@@ -22,22 +22,19 @@
                   <div id="div-{{field.auto_id}}">
           {% endif %}
             <p class="form-group">
-                  {% if field.field.widget.input_type == "checkbox" and field.field.widget.allow_multiple_selected  %}
+                  {% if field.label == "Product" %}
                   <label>
                         {{field.label}}
                   </label>
-                  {% for item in field %}
-                  <div class="col-6 mb-3 form-check form-switch form-check-custom form-check-solid">
-                    {{item}}
-                  </div>
-                  {% endfor %}
+                  {{field}}
                   <div>
                     <div class="table-responsive mb-8" >
                       <table class="table align-middle gs-0 gy-4 my-0">
                         <thead>
                           <tr>
+                            <th class="w-80px">Remove</th>
                             <th class="min-w-175px">Name</th>
-                            <th class="w-80px">Rate</th>
+                            <th class="w-85px">Rate</th>
                             <th class="min-w-100px">Quantity</th>
                             <th class="w-80px">Total</th>
                           </tr>
@@ -69,7 +66,7 @@
         {% csrf_token %}
 
 
-    <button type="submit" class="btn btn-primary">Create Purchase</button>
+    <button type="submit" class="btn btn-primary">Create Bill</button>
   </form>
   </div>
 </div>
@@ -83,6 +80,8 @@
 {% block footer_js %}
 <script src="{% static 'js/num2words.js' %}"></script>
 <script type="text/javascript">
+
+  const selectedItemId = [];
 
 $(document).ready(function() {
    $('#id_').focus();
@@ -120,20 +119,37 @@ $(document).ready(function() {
     $('#id_grand_total').keyup();
   }
 
-  $('#id_customer').on('change', function() {
-    let pk = this.value 
-    if(pk){
-      $.ajax({
-        url: "{% settings_value "HOST_URL" %}/api/customer/" + pk,
-        type: 'GET',
-        success: function(data) {
-          $('#id_customer_name').val(data.name)
-          $('#id_customer_tax_number').val(data.tax_number)
-          $('#id_customer_address').val(data.address)
-        }
-      })
+  $('#id_product').on('change', async function() {
+    let pk = this.value;
+    if (!selectedItemId.includes(pk)){
+      selectedItemId.push(pk)
+      let billItem = await getBillItem(pk)
+      $('#bill_item').append(billItem)
+      calculatePrices()
+    }else{
+      alert('Item is already selected')
     }
+    
+
   });
+
+
+  function removeItemFromBill(event){
+    const elementIdTagArray = event.id.split('_')
+    const id = elementIdTagArray[elementIdTagArray.length -1]
+    
+
+    const ind = selectedItemId.indexOf(id)
+    selectedItemId.splice(ind,1)
+    
+
+    const tableBody = document.querySelector('#bill_item');
+    const tableRow = document.querySelector(`#id_bill_item_${id}`)
+    tableBody.removeChild(tableRow)
+
+    
+  }
+
   
   async function getBillItem(id){
         let new_data;
@@ -142,6 +158,7 @@ $(document).ready(function() {
           url:url, 
           type: "GET",
           success: function(data){
+            console.log(data)
                 const quantity = 1
                 const {title,price} = data
                 const total = price * quantity
@@ -149,12 +166,19 @@ $(document).ready(function() {
                 <tr data-kt-pos-element="item" data-kt-pos-item-price="33" id="id_bill_item_${id}">
                   <td class="pe-0">
                     <div class="d-flex align-items-center">
+                      <span class="fw-bold text-gray-800 cursor-pointer text-hover-primary fs-6 me-1"> 
+                        <button onclick="removeItemFromBill(this)" id="remove_${id}" type="button" class="btn btn-danger"> X </button>
+                          </span>
+                    </div>
+                  </td>
+                  <td class="pe-0">
+                    <div class="d-flex align-items-center">
                       <span class="fw-bold text-gray-800 cursor-pointer text-hover-primary fs-6 me-1">${title}</span>
                     </div>
                   </td>
                   <td class="pe-0">
                     <div class="d-flex align-items-center">
-                      <input type="text" class="form-control" placeholder="Rate" id="id_bill_item_rate_${id}" name="id_bill_item_rate_${id}" value="${price}" onkeyup="handleRateChange(this)">
+                      <input type="text" class="form-control" placeholder="Rate" id="id_bill_item_rate_${id}" name="id_bill_item_rate_${id}" value="${price}" onkeyup="handleRateChange(this)" disabled>
                     </div>
                   </td>
                   <td class="pe-0">
@@ -188,17 +212,6 @@ $(document).ready(function() {
   }
   
 
-  async function handleClick(e) {
-      const id = e.value
-      let billItem = await getBillItem(id)
-      if(e.checked){
-          $('#bill_item').append(billItem)
-          calculatePrices()
-      }else{
-          $(`#id_bill_item_${id}`).remove()
-          calculatePrices()
-      }
-  }
   async function handleRateChange(e){
       const id = e.id.split('_')[4]
       const quantity = $(`#id_bill_item_quantity_${id}`).val()
