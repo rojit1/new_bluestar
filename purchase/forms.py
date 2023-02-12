@@ -13,15 +13,17 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
         queryset=Vendor.objects.active(),
     )
 
-    field_order = ['vendor', 'price', 'product']
+
+    sub_total = forms.FloatField()
+    grand_total = forms.FloatField()
+
+
+    field_order = ['vendor', 'product', 'sub_total' ,'grand_total']
 
     class Meta:
         model = ProductPurchase
         fields = [
             "product",
-            "price",
-            "quantity",
-            "item_total",
         ]
         widgets = {
             "product": forms.Select(

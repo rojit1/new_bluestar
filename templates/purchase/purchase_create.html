@@ -6,7 +6,7 @@
 <div class="card-body p-4 m-4">
 
   <h1>{% if title %} {{title}} {% else %} Create {% endif %}</h1>
-    <form  name="bill_form" method="post">
+    <form  name="purchase_form" method="post">
       <div class="row">
 
          {% for field in form.visible_fields %}
@@ -56,7 +56,6 @@
                   {{field}}
                   <div class="fv-plugins-message-container invalid-feedback"><div data-field="daterangepicker_input"> {{field.errors}} </div></div>
                   {% endif %}
-
                   </p>
                   </div>
                     {% endfor %}
@@ -129,25 +128,30 @@ $(document).ready(function() {
     }else{
       alert('Item is already selected')
     }
-    
 
+  }).on('click', async function(){
+    let pk = this.value;
+    if (!selectedItemId.includes(pk)){
+      selectedItemId.push(pk)
+      let billItem = await getBillItem(pk)
+      $('#bill_item').append(billItem)
+      calculatePrices()
+    }else{
+      alert('Item is already selected')
+    }
   });
 
 
   function removeItemFromBill(event){
     const elementIdTagArray = event.id.split('_')
     const id = elementIdTagArray[elementIdTagArray.length -1]
-    
-
     const ind = selectedItemId.indexOf(id)
     selectedItemId.splice(ind,1)
     
-
     const tableBody = document.querySelector('#bill_item');
     const tableRow = document.querySelector(`#id_bill_item_${id}`)
     tableBody.removeChild(tableRow)
-
-    
+    calculatePrices()
   }
 
   

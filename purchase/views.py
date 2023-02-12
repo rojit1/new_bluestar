@@ -3,7 +3,7 @@ from django.views.generic import CreateView,DetailView,ListView,UpdateView,View,
 from root.utils import DeleteMixin
 from .models import Vendor, ProductPurchase
 from .forms import VendorForm, ProductPurchaseForm
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 
 class VendorMixin:
@@ -41,8 +41,12 @@ class ProductPurchaseCreateView(CreateView):
     form_class = ProductPurchaseForm
     template_name = "purchase/purchase_create.html"
 
-    def post(self, request):
-        return render(request, 'purchase/purchase_create.html' )
+    def form_valid(self, form):
+        print(form.data)
+        return redirect('/purchase/create/' )
+    
+
+
 
 class ProductPurchaseListView(TemplateView):
     template_name = 'purchase/purchase_list.html'
