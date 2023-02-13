@@ -7,6 +7,7 @@
 
   <h1>{% if title %} {{title}} {% else %} Create {% endif %}</h1>
     <form  name="purchase_form" method="post">
+      <input type="hidden" name="product_id_list" id="product-id-list">
       <div class="row">
 
          {% for field in form.visible_fields %}
@@ -122,6 +123,8 @@ $(document).ready(function() {
     let pk = this.value;
     if (!selectedItemId.includes(pk)){
       selectedItemId.push(pk)
+      document.getElementById('product-id-list').value = selectedItemId.toString()
+      console.log(selectedItemId.toString())
       let billItem = await getBillItem(pk)
       $('#bill_item').append(billItem)
       calculatePrices()
@@ -129,16 +132,6 @@ $(document).ready(function() {
       alert('Item is already selected')
     }
 
-  }).on('click', async function(){
-    let pk = this.value;
-    if (!selectedItemId.includes(pk)){
-      selectedItemId.push(pk)
-      let billItem = await getBillItem(pk)
-      $('#bill_item').append(billItem)
-      calculatePrices()
-    }else{
-      alert('Item is already selected')
-    }
   });
 
 
@@ -151,6 +144,7 @@ $(document).ready(function() {
     const tableBody = document.querySelector('#bill_item');
     const tableRow = document.querySelector(`#id_bill_item_${id}`)
     tableBody.removeChild(tableRow)
+    document.getElementById('product-id-list').value = selectedItemId.toString()
     calculatePrices()
   }
 

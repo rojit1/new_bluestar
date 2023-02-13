@@ -42,7 +42,24 @@ class ProductPurchaseCreateView(CreateView):
     template_name = "purchase/purchase_create.html"
 
     def form_valid(self, form):
-        print(form.data)
+        form_data = form.data
+        print(form_data)
+
+        product_ids =  form_data.get('product_id_list', '')
+        product_quantity = dict()
+
+        if product_ids:
+            product_ids = product_ids.split(',')
+        else:
+            pass
+
+        for id in product_ids:
+            pid = 'id_bill_item_quantity_'+str(id)
+            product_quantity[str(id)] = form_data.get(pid)
+            
+        print(product_quantity)
+
+
         return redirect('/purchase/create/' )
     
 

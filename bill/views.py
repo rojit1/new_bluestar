@@ -518,7 +518,6 @@ class BillCreate(BillMixin, CreateView):
         return reverse_lazy("bill_detail", kwargs={"pk": self.object.id})
 
     def form_valid(self, form):
-        print(form.data)
         nepali_today = nepali_datetime.date.today()
         form.instance.organization = self.request.user.organization
         form.instance.branch = Branch.objects.active().last()

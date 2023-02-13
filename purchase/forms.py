@@ -9,6 +9,7 @@ class VendorForm(forms.ModelForm):
         fields = ['name', 'address', 'contact',]
     
 class ProductPurchaseForm(BaseForm, forms.ModelForm):
+
     vendor = forms.ModelChoiceField(
         queryset=Vendor.objects.active(),
     )
