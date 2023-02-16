@@ -13,14 +13,28 @@
          {% for field in form.visible_fields %}
 
          {% if field.field.widget.input_type == "text" or field.field.widget.input_type == "number" or field.field.widget.input_type == "datetime-local" or field.field.widget.input_type == "url" or field.field.widget.input_type == "email" or field.field.widget.input_type == "date" %}
-         <div class="col-md-6 fv-row fv-plugins-icon-container" id="div-{{field.auto_id}}">
+        
+          {% if field.label == "Discount amount"%}
+            <div class="col-md-3 fv-row fv-plugins-icon-container" id="div-{{field.auto_id}}">
+            {% else %}
+            <div class="col-md-6 fv-row fv-plugins-icon-container" id="div-{{field.auto_id}}">
+          {% endif %}
 
          {% elif field.field.widget.input_type == "textarea" %}
                 <div class="col-md-12 fv-row fv-plugins-icon-container" id="div-{{field.auto_id}}">
          {% elif  field.field.widget.input_type == "checkbox" %}
                 <div class="row fv-row fv-plugins-icon-container" id="div-{{field.auto_id}}">
           {% else %}
-                  <div id="div-{{field.auto_id}}">
+
+          {% if field.label == "Discount percentage"%}
+
+          <div class="col-md-3 fv-row fv-plugins-icon-container" id="div-{{field.auto_id}}">
+
+          {% else %}
+
+          <div id="div-{{field.auto_id}}">
+        {% endif %}
+
           {% endif %}
             <p class="form-group">
                   {% if field.label == "Product" %}
@@ -37,6 +51,7 @@
                             <th class="min-w-175px">Name</th>
                             <th class="w-85px">Rate</th>
                             <th class="min-w-100px">Quantity</th>
+                            <th class="w-85px">Taxable</th>
                             <th class="w-80px">Total</th>
                           </tr>
                         </thead>
@@ -53,6 +68,7 @@
                       </span>
                   </label>
                   {% else %}
+
                   <label for="{{field.auto_id}}">{{field.label}}</label>
                   {{field}}
                   <div class="fv-plugins-message-container invalid-feedback"><div data-field="daterangepicker_input"> {{field.errors}} </div></div>
@@ -66,7 +82,7 @@
         {% csrf_token %}
 
 
-    <button type="submit" class="btn btn-primary">Create Bill</button>
+    <button type="submit" class="btn btn-primary">Create Purchase Entry</button>
   </form>
   </div>
 </div>
@@ -88,34 +104,51 @@ $(document).ready(function() {
    $('#div-id_grand_total').num2words();
 }); 
 
-  $('#id_is_taxable').change(function(){
-          $('#id_is_taxable').val($(this).is(':checked'));
-          calculatePrices()
-  })
-
   function calculatePrices(){
+          let taxableAmount = 0
+          let nonTaxableAmount = 0
           let idarray = $("#bill_item .text-end")
                        .find("span") 
                        .map(function() { return this.id; }) 
                        .get(); 
+
           let sub_total = idarray.map(e=>$(`#${e}`).html()).reduce((total, current) => {
                   return parseFloat(total) + parseFloat(current);
               }, 0);
           
-          const is_taxable = $('#id_is_taxable').val()
-      if(is_taxable==="true" || is_taxable ==="on"){
-          $('#id_sub_total').val(parseFloat(sub_total).toFixed(2))
-          let discount_amount = $('#id_discount_amount').val()
-          let taxable_amount = $('#id_taxable_amount').val(parseFloat(sub_total- discount_amount).toFixed(2))
-          let tax_amount = $('#id_tax_amount').val(parseFloat(0.13 * taxable_amount.val()).toFixed(2))
-          $('#id_grand_total').val(parseFloat(parseFloat(taxable_amount.val())+ parseFloat(tax_amount.val())).toFixed(2))
-      }else{
-          $('#id_sub_total').val(parseFloat(sub_total).toFixed(2))
-          let discount_amount = $('#id_discount_amount').val()
-          let taxable_amount = $('#id_taxable_amount').val(0)
-          let tax_amount = $('#id_tax_amount').val(0)
-          $('#id_grand_total').val(parseFloat(sub_total).toFixed(2))
-      }
+          idarray.forEach(e=>{
+            const element = document.getElementById(e)
+            const isTaxable = element.getAttribute('taxable')
+            const total = parseFloat(element.innerHTML)
+            if(isTaxable === "true"){
+              taxableAmount += total
+            }else{
+              nonTaxableAmount += total
+            }
+          })
+
+
+          $('#id_sub_total').val(taxableAmount+nonTaxableAmount)
+          const subTotal = parseFloat($('#id_sub_total').val())
+
+
+          const discountPercentage = parseInt($('#id_discount_percentage').val())
+          const discountAmount = discountPercentage/100 * subTotal
+          $('#id_discount_amount').val(subTotal*(discountPercentage/100))
+
+          
+          taxableAmount -= discountPercentage/100*taxableAmount
+          nonTaxableAmount -= discountPercentage/100*nonTaxableAmount
+
+
+          $('#id_taxable_amount').val(taxableAmount.toFixed(2))
+          $('#id_non_taxable_amount').val(nonTaxableAmount.toFixed(2))
+          
+          const vatAmount = parseFloat(0.13 * taxableAmount)
+          $('#id_tax_amount').val(vatAmount.toFixed(2))
+
+          $('#id_grand_total').val(parseFloat(taxableAmount+nonTaxableAmount+vatAmount).toFixed(2))
+
     $('#id_grand_total').keyup();
   }
 
@@ -124,7 +157,6 @@ $(document).ready(function() {
     if (!selectedItemId.includes(pk)){
       selectedItemId.push(pk)
       document.getElementById('product-id-list').value = selectedItemId.toString()
-      console.log(selectedItemId.toString())
       let billItem = await getBillItem(pk)
       $('#bill_item').append(billItem)
       calculatePrices()
@@ -156,10 +188,10 @@ $(document).ready(function() {
           url:url, 
           type: "GET",
           success: function(data){
-            console.log(data)
                 const quantity = 1
-                const {title,price} = data
-                const total = price * quantity
+                const {title,price, is_taxable} = data
+                const total = 0
+              
                 new_data=`
                 <tr data-kt-pos-element="item" data-kt-pos-item-price="33" id="id_bill_item_${id}">
                   <td class="pe-0">
@@ -176,7 +208,7 @@ $(document).ready(function() {
                   </td>
                   <td class="pe-0">
                     <div class="d-flex align-items-center">
-                      <input type="text" class="form-control" placeholder="Rate" id="id_bill_item_rate_${id}" name="id_bill_item_rate_${id}" value="${price}" onkeyup="handleRateChange(this)" disabled>
+                      <input type="text" class="form-control" placeholder="Rate" id="id_bill_item_rate_${id}" name="id_bill_item_rate_${id}" value="1" onkeyup="handleRateChange(this)">
                     </div>
                   </td>
                   <td class="pe-0">
@@ -199,8 +231,15 @@ $(document).ready(function() {
                       </button>
                     </div>
                   </td>
+
+                  <td class="pe-0">
+                    <div class="d-flex align-items-center">
+                      <span class="fw-bold text-danger cursor-pointer text-hover-primary fs-6 me-1">${is_taxable?'YES':'NO'}</span>
+                    </div>
+                  </td>
+
                   <td class="text-end">
-                    <span class="fw-bold text-primary fs-2" data-kt-pos-element="item-total" id="id_bill_item_total_${id}">${total}</span>
+                    <span class="fw-bold text-primary fs-2" data-kt-pos-element="item-total" id="id_bill_item_total_${id}" taxable="${is_taxable}" >${total}</span>
                   </td>
                 </tr>
               `
@@ -250,9 +289,11 @@ $(document).ready(function() {
       calculatePrices()
  }
 
- $('#id_discount_amount').on('input', function() {
+ $('#id_discount_percentage').on('change', function() {
      calculatePrices()
   })
+
+
   
 
 </script>
