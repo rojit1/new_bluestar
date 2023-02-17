@@ -35,7 +35,7 @@ class Product(BaseModel):
     barcode = models.CharField(null=True, max_length=100, blank=True)
 
     def __str__(self):
-        return f"{self.title} - Rs. {self.price} per {self.unit}"
+        return f"{self.title}"
 
 
 from django.contrib.auth import get_user_model

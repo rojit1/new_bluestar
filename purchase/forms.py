@@ -18,7 +18,10 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
         (40, 40),
         (50, 50),
 
-    ) 
+    )
+    bill_date = forms.CharField(required=False, empty_value=None)
+    bill_no = forms.CharField(required=False, empty_value=None)
+    pp_no = forms.CharField(required=False, empty_value=None)
 
     vendor = forms.ModelChoiceField(
         queryset=Vendor.objects.active(),
@@ -26,7 +29,6 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
     sub_total = forms.FloatField()
     discount_percentage = forms.ChoiceField(choices=DISCOUNT_PERCENTAGE_CHOICES)
     discount_amount = forms.FloatField(initial=0.0)
-
 
     taxable_amount = forms.FloatField(initial=0.0)
     non_taxable_amount = forms.FloatField(initial=0.0)
@@ -47,7 +49,7 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
     )
 
 
-    field_order = ['vendor', 'product', 'sub_total', 'discount_percentage', 'discount_amount', 'taxable_amount',
+    field_order = [ 'bill_no', 'bill_date', 'pp_no', 'vendor', 'product', 'sub_total', 'discount_percentage', 'discount_amount', 'taxable_amount',
                 'non_taxable_amount', 'tax_amount', 'grand_total', 'amount_in_words', 'payment_mode']
 
 

@@ -1,0 +1,26 @@
+{%extends 'base.html'%}
+{% block title %}
+{{object.org_name}}
+{% endblock title %}
+{% block title_bar %}
+{% include 'components/title_bar.html' with title=object.invoice_number %}
+{% endblock title_bar %}
+{% block content %}
+{% if not object.status %}
+    {% include './_purchase_card.html' with object=object name="Sales Return" id="invoice-card" %}
+{% elif object.print_count == 1 %}
+    {% include './_purchase_card.html' with object=object name="Tax Invoice" id="tax-invoice-card" %}
+    {% include './_purchase_card.html' with object=object name="Invoice" id="invoice-card" %}
+{% else %}
+    {% include './_purchase_card.html' with object=object name="Invoice" id="invoice-card" %}
+{% endif %}
+<!-- begin::Footer-->
+<div class="d-flex flex-stack flex-wrap mt-lg-20 pt-13">
+
+</div>
+
+
+{%endblock%}
+{% block footer_js %}
+
+{% endblock footer_js %}

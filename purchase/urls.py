@@ -11,9 +11,10 @@ urlpatterns = [
 ]
 
 
-from .views import ProductPurchaseCreateView, ProductPurchaseListView
+from .views import ProductPurchaseCreateView, PurchaseListView, PurchaseDetailView
 
 urlpatterns += [
     path('purchase/create/', ProductPurchaseCreateView.as_view(), name="product_purchase_create"),
-    path('purchase/', ProductPurchaseListView.as_view(), name="product_purchase_list")
+    path('purchase/<int:pk>/', PurchaseDetailView.as_view(), name="purchase_detail"),
+    path('purchase/', PurchaseListView.as_view(), name="purchase_list")
 ]
