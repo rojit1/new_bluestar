@@ -1,6 +1,7 @@
 from django.db import models
 from root.utils import BaseModel
-from product.models import Product
+from product.models import Product, ProductStock
+from django.db.models.signals import post_save
 
 class Vendor(BaseModel):
     name = models.CharField(max_length=50)
@@ -41,7 +42,14 @@ class ProductPurchase(BaseModel):
     def __str__(self):
         return f'{self.product.title} X {self.quantity}'
 
+''' Signal for Updating Product STock after Purchase '''
 
+def update_stock(sender, instance, **kwargs):
+    stock = ProductStock.objects.get(product=instance.product)
+    stock.stock_quantity = stock.stock_quantity + instance.quantity
+    stock.save()
+
+post_save.connect(update_stock, sender=ProductPurchase)
 
 '''  IRD requirement models '''
 

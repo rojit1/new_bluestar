@@ -28,4 +28,14 @@ path('prdct/client/create/', CustomerProductCreate.as_view(), name='customerprod
 path('prdct/client/<int:pk>/update/', CustomerProductUpdate.as_view(), name='customerproduct_update'),
 path('prdct/client/delete', CustomerProductDelete.as_view(), name='customerproduct_delete'),
 ]
+
+               
+from .views import ProductStockList,ProductStockDetail,ProductStockCreate,ProductStockUpdate,ProductStockDelete
+urlpatterns += [
+path('stock/', ProductStockList.as_view(), name='productstock_list'),
+path('stock/<int:pk>/', ProductStockDetail.as_view(), name='productstock_detail'),
+path('stock/create/', ProductStockCreate.as_view(), name='productstock_create'),
+path('stock/<int:pk>/update/', ProductStockUpdate.as_view(), name='productstock_update'),
+path('stock/delete', ProductStockDelete.as_view(), name='productstock_delete'),
+]
                

@@ -44,7 +44,6 @@ class ProductPurchaseCreateView(CreateView):
 
     def form_valid(self, form):
         form_data = form.data
-        print(form_data)
         bill_no = form_data.get('bill_no', None)
         bill_date = form_data.get('bill_date', None)
         pp_no = form_data.get('pp_no',None)
@@ -61,7 +60,7 @@ class ProductPurchaseCreateView(CreateView):
 
 
         purchase_object = Purchase(
-            vendor_id=vendor_id,sub_total=sub_total,
+            vendor_id=vendor_id,sub_total=sub_total, bill_date=bill_date,
             discount_percentage=discount_percentage,discount_amount=discount_amount,
             taxable_amount=taxable_amount, non_taxable_amount=non_taxable_amount,
             tax_amount=tax_amount, grand_total=grand_total,

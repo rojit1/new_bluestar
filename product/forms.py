@@ -55,3 +55,11 @@ class CustomerProductForm(BaseForm, forms.ModelForm):
             "is_featured",
             "agent",
         ]
+
+from .models import ProductStock
+
+class ProductStockForm(BaseForm, forms.ModelForm):
+    class Meta:
+        model = ProductStock
+        fields = '__all__'
+        exclude = [ 'sorting_order', 'is_featured', 'is_deleted', 'status', 'deleted_at',]

@@ -1,5 +1,6 @@
 from django.db import models
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from root.utils import BaseModel
 from user.models import Customer
@@ -36,6 +37,23 @@ class Product(BaseModel):
 
     def __str__(self):
         return f"{self.title}"
+
+
+class ProductStock(BaseModel):
+    product = models.OneToOneField(Product, on_delete=models.PROTECT)
+    stock_quantity = models.PositiveSmallIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.product.title} -> {self.stock_quantity}'
+
+
+
+''' Signal to create ProductStock after Product instance is created '''
+@receiver(post_save, sender=Product)
+def create_stock(sender, created, instance, **kwargs):
+    if created:
+        stock = ProductStock(product=instance, stock_quantity=0)
+        stock.save()
 
 
 from django.contrib.auth import get_user_model

@@ -1,12 +1,14 @@
 from datetime import datetime
 import black
 from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save
+from django.shortcuts import get_object_or_404
 
 from django.db import models
 from django.dispatch import receiver
 from django.forms import FloatField
 from organization.models import Organization
-from product.models import Product
+from product.models import Product, ProductStock
 from root.utils import BaseModel
 from django.db.models.signals import post_save, pre_save
 
@@ -127,18 +129,19 @@ class BillItem(BaseModel):
     def __str__(self):
         return f"{self.product_title}"
 
-    # def save(self, *args, **kwrgs):
-    #     try:
-    #         print("-------------------------------")
-    #         print("self product")
-    #         print(self.new_product)
-    #         if self.new_product:
-    #             self.product_title = self.new_product.title
-    #             self.unit_title = self.new_product.unit
-    #             self.amount = self.product_quantity * self.rate
-    #             super().save(*args, **kwrgs)
-    #     except:
-    #         pass
+
+''' Signal for Decresing Product Stock after Sold '''
+
+def update_stock(sender, instance, **kwargs):
+    stock = get_object_or_404(ProductStock, product=instance.product)
+    try:
+        stock.stock_quantity = stock.stock_quantity - int(instance.product_quantity)
+        stock.save()
+    except Exception as e:
+        pass
+
+post_save.connect(update_stock, sender=BillItem)
+
 
 
 class Bill(BaseModel):

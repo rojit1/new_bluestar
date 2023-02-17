@@ -149,3 +149,32 @@ class CustomerProductUpdate(CustomerProductMixin, UpdateView):
 
 class CustomerProductDelete(CustomerProductMixin, DeleteMixin, View):
     pass
+
+'''  STock VIews '''
+
+from .models import ProductStock
+from .forms import ProductStockForm
+
+class ProductStockMixin:
+    model = ProductStock
+    form_class = ProductStockForm
+    paginate_by = 10
+    queryset = ProductStock.objects.filter(status=True,is_deleted=False)
+    success_url = reverse_lazy('productstock_list')
+
+
+class ProductStockList(ProductStockMixin, ListView):
+    template_name = "productstock/productstock_list.html"
+    queryset = ProductStock.objects.filter(status=True,is_deleted=False)
+
+class ProductStockDetail(ProductStockMixin, DetailView):
+    template_name = "productstock/productstock_detail.html"
+
+class ProductStockCreate(ProductStockMixin, CreateView):
+    template_name = "create.html"
+
+class ProductStockUpdate(ProductStockMixin, UpdateView):
+    template_name = "update.html"
+
+class ProductStockDelete(ProductStockMixin, DeleteMixin, View):
+    pass
