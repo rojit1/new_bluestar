@@ -5,18 +5,16 @@
        <div class="mw-lg-950px mx-auto w-100">
           <center >
              <h2>
-                {{object.organization.org_name}}  
+                {{organization.org_name}}  
              </h2>
-             {{object.organization.company_address}} | Phone Number:  {{object.organization.company_contact_number}}<br>
-             PAN: {{object.organization.tax_number}} 
+             {{organization.company_address}} | Phone Number:  {{organization.company_contact_number}}<br>
+             PAN: {{organization.tax_number}} 
              <hr>
              <h5> 
                 {% if not object.status %}
-                Sales Return
+                Purchase Return
                 {% else %}
-                   {%if object.print_count == 1 %} {{name}} {%endif%}
-                   {% if object.print_count == 2 %} Invoice {%endif%} 
-                   {%if object.print_count > 2 %} Copy of Original Invoice - {{object.print_count|add:-2}} {%endif%}
+                  Purchase Invoice
                 {% endif %}
              </h5>
              <br>
@@ -24,16 +22,14 @@
           <!-- begin::Header-->
           <div class="row mb-4">
              <div class="col">
-                Billing Office: <strong>  {{object.branch.name}} </strong><br>
-                Invoice Number: <strong>  {{object.invoice_number}} </strong><br>
-                Transaction Date: <strong>  {{object.transaction_date_time|date:"Y.m.d h:i a"}} </strong><br>
-                Invoice Issue Date: <strong>  {{object.transaction_date|date:"Y.m.d"}} </strong><br>
-                Transaction Miti: <strong>  {{object.transaction_miti}} </strong>
+                Invoice Number: <strong>  {{object.bill_no}} </strong><br>
+                Transaction Date: <strong>  {{object.bill_date|date:"Y.m.d"}} </strong><br>
+                Invoice Issue Date: <strong>  {{object.bill_date|date:"Y.m.d"}} </strong><br>
              </div>
              <div class=" col text-end ">
-                Customer Name : <strong>  {{object.customer_name}} </strong><br>
-                Customer PAN : <strong>  {{object.customer_tax_number}} </strong><br>
-                Cutomer Address: <strong>  {{object.customer_address}} </strong>
+                Vendor Name : <strong>  {{object.vendor.name}} </strong><br>
+                Vendor PAN : <strong>  {{object.vendor.pan_no}} </strong><br>
+                Vendor Address: <strong>  {{object.vendor.address}} </strong>
              </div>
              <!--end::Logo-->
           </div>
@@ -57,13 +53,13 @@
                             </tr>
                          </thead>
                          <tbody>
-                            {%for item in object.bill_items.all%}
+                            {%for item in object.productpurchase_set.all%}
                             <tr class="fw-bolder text-gray-700 text-end">
-                               <td style="font-size: 10px;" class="d-flex align-items-center pt-1">{{item.product_title}}</td>
-                               <td style="font-size: 10px;" class="pt-1">{{item.product_quantity}}</td>
-                               <td style="font-size: 10px;" class="pt-1">{{item.unit_title}}</td>
+                               <td style="font-size: 10px;" class="d-flex align-items-center pt-1">{{item.product.title}}</td>
+                               <td style="font-size: 10px;" class="pt-1">{{item.quantity}}</td>
+                               <td style="font-size: 10px;" class="pt-1">{{item.product.unit}}</td>
                                <td style="font-size: 10px;" class="pt-1">Rs.{{item.rate}}  </td>
-                               <td style="font-size: 10px;" class="pt-1 pe-lg-6 text-dark fw-boldest text-end">Rs. {{item.amount|floatformat:2}}</td>
+                               <td style="font-size: 10px;" class="pt-1 pe-lg-6 text-dark fw-boldest text-end">Rs. {{item.item_total|floatformat:2}}</td>
                             </tr>
                             {%endfor%}
                             <tr>
@@ -73,6 +69,13 @@
                                <td class="text-end p-0 pt-5"><strong > Sub Total </strong></td>
                                <td class="text-end p-0 pt-5">{{object.sub_total|floatformat:2}}</td>
                             </tr>
+                            <tr >
+                              <td></td>
+                              <td></td>
+                              <td></td>
+                              <td class="text-end p-0"><strong> Discount % </strong></td>
+                              <td class="text-end p-0">{{object.discount_percentage}} %</td>
+                           </tr>
                             <tr >
                                <td></td>
                                <td></td>
@@ -88,10 +91,17 @@
                                <td class="text-end p-0">{{object.taxable_amount|floatformat:2}}</td>
                             </tr>
                             <tr >
+                              <td></td>
+                              <td></td>
+                              <td></td>
+                              <td class="text-end p-0"><strong>Non Taxable Amount </strong></td>
+                              <td class="text-end p-0">{{object.non_taxable_amount|floatformat:2}}</td>
+                           </tr>
+                            <tr >
                                <td></td>
                                <td></td>
                                <td></td>
-                               <td class="text-end p-0"><strong> Tax Amount </strong></td>
+                               <td class="text-end p-0"><strong> Vat Amount </strong></td>
                                <td class="text-end p-0">{{object.tax_amount|floatformat:2}}</td>
                             </tr>
                             <tr >
@@ -110,18 +120,6 @@
                       {% if reason %}
                          <p class="text-end">  Reason: {{reason}}</p>
                       {% endif %}
-                   </div>
-                   <div class="row">
-                    
-                      <div class="col">
-                         __________________ <br>
-                        <p>  Received By </p>
-                      </div>
-                        <div class="col  text-end">
-                         {{request.user.full_name}}<br>
-                         Dispatched By
-                      </div>
- 
                    </div>
  
                    <!--end::Table-->

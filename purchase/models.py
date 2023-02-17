@@ -16,7 +16,8 @@ class Vendor(BaseModel):
 class Purchase(BaseModel):
     vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL, null=True)
     products = models.ManyToManyField(Product, through='ProductPurchase')
-    bill_date = models.CharField(max_length=50, null=True, blank=True)
+    bill_date = models.DateField(max_length=50, null=True, blank=True)
+    bill_no = models.CharField(max_length=30, null=True, blank=True)
     sub_total = models.DecimalField(max_digits=9, decimal_places=2)
     discount_percentage = models.IntegerField(default=0)
     discount_amount = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)

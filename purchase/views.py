@@ -5,6 +5,8 @@ from .models import Vendor, ProductPurchase, Purchase, TblpurchaseEntry
 from .forms import VendorForm, ProductPurchaseForm
 from django.shortcuts import render, redirect
 from product.models import Product
+from organization.models import Organization
+from django.shortcuts import get_object_or_404
 
 
 class VendorMixin:
@@ -13,6 +15,7 @@ class VendorMixin:
     paginate_by = 10
     queryset = Vendor.objects.filter(status=True,is_deleted=False)
     success_url = reverse_lazy('vendor_list')
+
 
 
 class VendorList(VendorMixin, ListView):
@@ -36,6 +39,7 @@ class VendorDelete(VendorMixin, DeleteMixin, View):
     pass
 
 '''  -------------------------------------    '''
+
 
 class ProductPurchaseCreateView(CreateView):
     model = ProductPurchase
@@ -101,8 +105,31 @@ class PurchaseListView(ListView):
     queryset = Purchase.objects.filter(is_deleted=False)
     template_name = 'purchase/purchase_list.html'
 
-class PurchaseDetailView(TemplateView):
+
+class PurchaseDetailView(DetailView):
     template_name = 'purchase/purchase_detail.html'
+    queryset = Purchase.objects.filter(is_deleted=False)
+
+    def get_context_data(self, **kwargs):
+        org = Organization.objects.first()
+        context =  super().get_context_data(**kwargs)
+        context['organization'] = org
+        return context
 
 
+
+class MarkPurchaseVoid(View):
+
+    def post(self, request, *args, **kwargs):
+        id = self.kwargs.get('pk')
+        reason = request.POST.get('reason')
+        purchase = get_object_or_404(Purchase, pk=id)
+        purchase.status = False
+        purchase.save()
+
+        
+        
+        return redirect(
+            reverse_lazy("purchase_detail", kwargs={"pk": self.kwargs.get("id")})
+        )
 

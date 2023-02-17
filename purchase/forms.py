@@ -6,7 +6,7 @@ from product.models import Product
 class VendorForm(BaseForm, forms.ModelForm):
     class Meta:
         model = Vendor
-        fields = ['name', 'address', 'contact',]
+        fields = ['name', 'address', 'contact', 'pan_no']
     
 class ProductPurchaseForm(BaseForm, forms.ModelForm):
     DISCOUNT_PERCENTAGE_CHOICES = (
@@ -19,7 +19,7 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
         (50, 50),
 
     )
-    bill_date = forms.CharField(required=False, empty_value=None)
+    bill_date = forms.DateField(required=False)
     bill_no = forms.CharField(required=False, empty_value=None)
     pp_no = forms.CharField(required=False, empty_value=None)
 
