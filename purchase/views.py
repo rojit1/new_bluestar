@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect
 from product.models import Product
 from organization.models import Organization
 from django.shortcuts import get_object_or_404
-from django.forms.models import model_to_dict
+from product.models import ProductStock
 
 
 class VendorMixin:
@@ -129,6 +129,15 @@ class MarkPurchaseVoid(View):
         purchase = get_object_or_404(Purchase, pk=id)
         purchase.status = False
         purchase.save()
+
+
+        purchased_products = purchase.productpurchase_set.all()
+        for item in purchased_products:
+            stock = ProductStock.objects.get(product=item.product)
+            stock.stock_quantity = stock.stock_quantity-item.quantity
+            stock.save()
+            
+
         entry_obj = TblpurchaseEntry.objects.get(pk=id)
         TblpurchaseReturn.objects.create(
             bill_date=entry_obj.bill_date,
