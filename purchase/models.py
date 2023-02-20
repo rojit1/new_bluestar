@@ -59,8 +59,8 @@ class TblpurchaseEntry(models.Model):
     bill_date = models.CharField(null=True, max_length=20, blank=True)
     bill_no = models.CharField(max_length=30, null=True, blank=True)
     pp_no = models.CharField(null=True, max_length=20, blank=True)
-    buyer_name = models.CharField(null=True, max_length=200, blank=True)
-    buyer_pan = models.CharField(null=True, max_length=200, blank=True)
+    vendor_name = models.CharField(null=True, max_length=200, blank=True)
+    vendor_pan = models.CharField(null=True, max_length=200, blank=True)
     item_name = models.CharField(null=True, max_length=200, blank=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     unit = models.CharField(null=True, blank=True, max_length=200)
@@ -74,19 +74,19 @@ class TblpurchaseEntry(models.Model):
 
 
 class TblpurchaseReturn(models.Model):
-    idtblpurchaseEntry = models.BigAutoField(primary_key=True)
+    idtblpurchaseReturn = models.BigAutoField(primary_key=True)
     bill_date = models.CharField(null=True, max_length=20, blank=True)
     bill_no = models.CharField(max_length=30, null=True, blank=True)
     pp_no = models.CharField(null=True, max_length=20, blank=True)
-    buyer_name = models.CharField(null=True, max_length=200, blank=True)
-    buyer_pan = models.CharField(null=True, max_length=200, blank=True)
+    vendor_name = models.CharField(null=True, max_length=200, blank=True)
+    vendor_pan = models.CharField(null=True, max_length=200, blank=True)
     item_name = models.CharField(null=True, max_length=200, blank=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     unit = models.CharField(null=True, blank=True, max_length=200)
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     tax_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     non_tax_purchase = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    purchase_req_id = models.IntegerField(null=True, blank=True)
+    reason = models.CharField(max_length=200, null=True, blank=True)
     
 
     class Meta:

@@ -1,12 +1,13 @@
 from django.urls import reverse_lazy
 from django.views.generic import CreateView,DetailView,ListView,UpdateView,View, TemplateView
 from root.utils import DeleteMixin
-from .models import Vendor, ProductPurchase, Purchase, TblpurchaseEntry
+from .models import Vendor, ProductPurchase, Purchase, TblpurchaseEntry, TblpurchaseReturn
 from .forms import VendorForm, ProductPurchaseForm
 from django.shortcuts import render, redirect
 from product.models import Product
 from organization.models import Organization
 from django.shortcuts import get_object_or_404
+from django.forms.models import model_to_dict
 
 
 class VendorMixin:
@@ -71,13 +72,15 @@ class ProductPurchaseCreateView(CreateView):
             amount_in_words=amount_in_words, payment_mode=payment_mode
         )
         purchase_object.save()
+
         product_ids =  form_data.get('product_id_list', '')
 
         item_name = ''
+
         total_quantity = 0
-        buyer = Vendor.objects.get(pk=vendor_id)
-        buyer_name = buyer.name
-        buyer_pan = buyer.pan_no
+        vendor = Vendor.objects.get(pk=vendor_id)
+        vendor_name = vendor.name
+        vendor_pan = vendor.pan_no
 
         if product_ids:
             product_ids = product_ids.split(',')
@@ -92,7 +95,7 @@ class ProductPurchaseCreateView(CreateView):
             ProductPurchase.objects.create(product_id=id, purchase=purchase_object, quantity=quantity, rate=rate, item_total=item_total)
 
         TblpurchaseEntry.objects.create(
-            bill_no=bill_no, bill_date=bill_date, pp_no=pp_no, buyer_name=buyer_name, buyer_pan=buyer_pan,
+            bill_no=bill_no, bill_date=bill_date, pp_no=pp_no, vendor_name=vendor_name, vendor_pan=vendor_pan,
             item_name=item_name, quantity=total_quantity, amount=grand_total, tax_amount=tax_amount, non_tax_purchase=non_taxable_amount
         )
 
@@ -122,14 +125,28 @@ class MarkPurchaseVoid(View):
 
     def post(self, request, *args, **kwargs):
         id = self.kwargs.get('pk')
-        reason = request.POST.get('reason')
+        reason = request.POST.get('voidReason')
         purchase = get_object_or_404(Purchase, pk=id)
         purchase.status = False
         purchase.save()
-
+        entry_obj = TblpurchaseEntry.objects.get(pk=id)
+        TblpurchaseReturn.objects.create(
+            bill_date=entry_obj.bill_date,
+            bill_no=entry_obj.bill_no,
+            pp_no=entry_obj.pp_no,
+            vendor_name=entry_obj.vendor_name,
+            vendor_pan=entry_obj.vendor_pan,
+            item_name=entry_obj.item_name,
+            quantity=entry_obj.quantity,
+            unit=entry_obj.unit,
+            amount=entry_obj.amount,
+            tax_amount=entry_obj.tax_amount,
+            non_tax_purchase=entry_obj.non_tax_purchase,
+            reason = reason
+        )
         
         
         return redirect(
-            reverse_lazy("purchase_detail", kwargs={"pk": self.kwargs.get("id")})
+            reverse_lazy("purchase_detail", kwargs={"pk": id})
         )
 

@@ -23,6 +23,7 @@
               <th class="min-w-225px sorting" tabindex="0" > Date Time</th>
               <th class="min-w-225px sorting" tabindex="0" > Vendor Name</th>
               <th class="min-w-225px sorting" tabindex="0" > Bill Date</th>
+              <th class="min-w-225px sorting" tabindex="0" > Void</th>
               <th class="min-w-225px sorting" tabindex="0" > Discount Percentage</th>
               <th class="min-w-225px sorting" tabindex="0" > Tax Amount</th>
               <th class="min-w-225px sorting" tabindex="0" > Total</th>
@@ -39,6 +40,9 @@
                 <td> <a href="{% url 'purchase_detail' object.pk %}"> {{object.created_at}} </a></td>
                 <td>{{object.vendor.name}}</td>
                 <td>{{object.bill_date}}</td>
+                <td>
+                  {% include "components/status.html" with status=object.status true_message="NO" false_message="YES" %}
+                </td>
                 <td>{{object.discount_percentage}}</td>         
                 <td>{{object.tax_amount}}</td>
                 <td>{{object.grand_total}}</td>
