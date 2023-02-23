@@ -974,7 +974,6 @@ class MaterializedView(
         }
         for key, value in grand_total.items():
             ws.write(row_num, columns.index(key), value or 0, font_style_bold)
-
         wb.save(response)
         return response
 

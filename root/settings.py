@@ -62,6 +62,7 @@ TEMPLATES = [
             ],
             "libraries": {
                 "get_list": "bill.templatetags.tags",
+                "custom_template_filters": "root.custom_template_filters"
             },
         },
     },

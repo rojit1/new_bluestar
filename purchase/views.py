@@ -1,14 +1,20 @@
+from datetime import date
 from django.urls import reverse_lazy
-from django.views.generic import CreateView,DetailView,ListView,UpdateView,View, TemplateView
-from root.utils import DeleteMixin
-from .models import Vendor, ProductPurchase, Purchase, TblpurchaseEntry, TblpurchaseReturn
-from .forms import VendorForm, ProductPurchaseForm
+from django.db.models import Sum
+from django.views.generic import CreateView,DetailView,ListView,UpdateView,View
+from django.shortcuts import get_object_or_404
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
+import xlwt
+
+from root.utils import DeleteMixin
 from product.models import Product
 from organization.models import Organization
-from django.shortcuts import get_object_or_404
 from product.models import ProductStock
+from .forms import VendorForm, ProductPurchaseForm
+from .models import Vendor, ProductPurchase, Purchase, TblpurchaseEntry, TblpurchaseReturn
 
+from bill.views import ExportExcelMixin
 
 class VendorMixin:
     model = Vendor
@@ -159,3 +165,112 @@ class MarkPurchaseVoid(View):
             reverse_lazy("purchase_detail", kwargs={"pk": id})
         )
 
+
+""" View starting for Purchase Book  """
+
+class PurchaseBookListView(ExportExcelMixin,View):
+
+    def export_to_excel(self, data):
+        response = HttpResponse(content_type="application/ms-excel")
+        response["Content-Disposition"] = 'attachment; filename="purchase_book.xls"'
+
+        common = ['bill_date', "bill_no", "pp_no", "vendor_name", "vendor_pan", "amount", "tax_amount", "non_tax_purchase"]
+        common.insert(0, 'idtblpurchaseEntry')
+        extra = ["import","importCountry","importNumber", "importDate"]
+        
+
+        wb, ws, row_num, font_style_normal, font_style_bold = self.init_xls(
+            "Purchase Book", common+extra
+        )
+        purchase_entry = data.get('purchase_entry')
+        rows = purchase_entry.values_list(*common)
+
+        for row in rows:
+            row = row + (0,0,0,0)
+            row_num += 1
+            for col_num in range(len(row)):
+                ws.write(row_num, col_num, row[col_num], font_style_normal)
+
+        purchase_entry_sum = data.get('purchase_entry_sum')
+        print(purchase_entry_sum)
+
+        row_num += 1
+        ws.write(row_num, 0, "Total", font_style_normal)
+        for key, value in purchase_entry_sum.items():
+            key = key.split('__')[0]
+            ws.write(row_num, common.index(key), value or 0, font_style_normal)
+
+        common [0] = "idtblpurchaseReturn"
+        columns2 = common+extra
+
+        row_num += 1
+        ws.write(row_num, 0, "")
+        row_num += 1
+        ws.write(row_num, 0, "Purchase Return", font_style_bold)
+        row_num += 1
+
+        new_columns = ["id"] + columns2[1:]
+        for col_num in range(len(columns2)):
+            ws.write(row_num, col_num, new_columns[col_num], font_style_bold)
+
+        return_entry = data.get('return_entry')
+        rows2 = return_entry.values_list(*common)
+        return_entry_sum = data.get('return_entry_sum')
+
+        for row in rows2:
+            row = row + (0,0,0,0)
+            row_num += 1
+            for col_num in range(len(row)):
+                ws.write(row_num, col_num, row[col_num], font_style_normal)
+
+        row_num += 1
+        ws.write(row_num, 0, "Total", font_style_normal)
+        for key, value in return_entry_sum.items():
+            key = key.split('__')[0]
+            ws.write(row_num, common.index(key), value or 0, font_style_normal)
+
+
+        row_num += 2
+        ws.write(row_num, 0, "Grand Total", font_style_bold)
+
+        grand_total = data.get('grand_total')
+
+        for key, value in grand_total.items():
+            key = key.split('__')[0]
+            ws.write(row_num, common.index(key), value or 0, font_style_bold)
+        wb.save(response)
+        return response
+
+        
+
+
+
+
+    def get(self, request, *args, **kwargs):
+        today = date.today()
+        from_date = request.GET.get('fromDate', today)
+        to_date = request.GET.get('toDate', today)
+        format = request.GET.get('format', None)
+
+        purchase_entry = TblpurchaseEntry.objects.filter(bill_date__range=[from_date, to_date])
+        return_entry = TblpurchaseReturn.objects.filter(bill_date__range=[from_date, to_date])
+        purchase_entry_sum = dict()
+        return_entry_sum = dict()
+        grand_total = dict()
+
+        if purchase_entry and return_entry:
+            purchase_entry_sum = purchase_entry.aggregate(Sum('amount'), Sum('tax_amount'), Sum('non_tax_purchase'))
+            return_entry_sum = return_entry.aggregate(Sum('amount'), Sum('tax_amount'), Sum('non_tax_purchase'))
+
+            for key in purchase_entry_sum.keys():
+                grand_total[key] = purchase_entry_sum[key] - return_entry_sum[key]
+
+
+        context = {'purchase_entry':purchase_entry, 'return_entry':return_entry,
+                    'purchase_entry_sum':purchase_entry_sum, 'return_entry_sum': return_entry_sum, 'grand_total': grand_total}
+        
+        if format and format =='xls':
+            return self.export_to_excel(data=context)
+
+
+        return render(request, 'purchase/purchase_book.html', context)
