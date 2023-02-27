@@ -55,6 +55,10 @@
         {%include 'components/menu_item.html' with path="pms" url='payment_mode_summary' title='Bill Summary Details' icon="bi bi-receipt" %}
 
 
+        {%include 'components/menu_title.html' with title="Accounting"%}
+        {%include 'components/menu_item.html' with path="accountchart" url='accountchart_list' title='Chart of Accounts' icon="bi bi-chart" %}
+
+
         {%include 'components/menu_title.html' with title="User Management"%}
         
         {%include 'components/menu_item.html' with path="user" url='user:user_list' title='Admins' icon="bi bi-person-check" %}

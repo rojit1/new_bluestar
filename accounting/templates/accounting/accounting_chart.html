@@ -1,0 +1,136 @@
+{%extends 'base.html'%}
+{% block pagetitle %}Accounting Chart {% endblock %}
+{% block home %} {% url 'customer_list' %} {% endblock %}
+{% block title %}Accounting Chart {% endblock %}
+{% block content %}
+<style>
+  .card {
+    margin: 10px;
+    padding: 0;
+    border: 2px solid green;
+    box-shadow: 6px 6px 6px rgb(171, 235, 171);
+
+  }
+
+  .card:hover{
+    border: 2px solid rgb(38, 73, 200);
+    box-shadow: 10px 10px 10px rgb(80, 99, 221);
+  }
+
+  ul{
+    font-size: 120%;
+  }
+</style>
+
+{% include 'components/title_bar.html' with title=' Chart of Acounts ' %}
+
+<div class="row">
+  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+    <div class="card-body">
+      <div class="text-center">
+        <h3>Asset</h3>
+        <a href="{% url 'accountchart_create' %}?accountType=Asset"><button
+            class="btn btn-success btn-sm">Create</button></a>
+        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+      </div>
+      <hr>
+      <ul>
+        {% for asset in assets %}
+        <li>{{asset}}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+    <div class="card-body">
+      <div class="text-center">
+        <h3>Liability</h3>
+        <a href="{% url 'accountchart_create' %}?accountType=Liability"><button
+            class="btn btn-success btn-sm">Create</button></a>
+        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+      </div>
+      <hr>
+      <ul>
+        {% for liability in liabilities %}
+        <li>{{liability}}</li>
+        {% endfor %}
+      </ul>
+
+    </div>
+  </div>
+
+  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+    <div class="card-body">
+      <div class="text-center">
+        <h3>Equity</h3>
+        <a href="{% url 'accountchart_create' %}?accountType=Equity"><button
+            class="btn btn-success btn-sm">Create</button></a>
+        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+      </div>
+
+      <hr>
+      <ul>
+        {% for equity in equities %}
+        <li>{{equity}}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+    <div class="card-body">
+      <div class="text-center">
+        <h3>Revenue</h3>
+        <a href="{% url 'accountchart_create' %}?accountType=Revenue"><button
+            class="btn btn-success btn-sm">Create</button></a>
+        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+      </div>
+
+      <hr>
+      <ul>
+        {% for revenue in revenues %}
+        <li>{{revenue}}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+    <div class="card-body">
+      <div class="text-center">
+        <h3>Expense</h3>
+        <a href="{% url 'accountchart_create' %}?accountType=Expense"><button
+            class="btn btn-success btn-sm">Create</button></a>
+        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+      </div>
+
+      <hr>
+      <ul>
+        {% for expense in expenses %}
+        <li>{{expense}}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+    <div class="card-body">
+      <div class="text-center">
+        <h3>Others</h3>
+        <a href="{% url 'accountchart_create' %}?accountType=Other"><button
+            class="btn btn-success btn-sm">Create</button></a>
+        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+      </div>
+
+      <hr>
+      <ul>
+        {% for other in others %}
+        <li>{{other}}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
