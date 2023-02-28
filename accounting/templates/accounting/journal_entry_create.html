@@ -1,0 +1,89 @@
+{%extends 'base.html'%}
+{% block pagetitle %}Journal Entry {% endblock %}
+
+{% block title %}Accounting Chart {% endblock %}
+
+{% block content %}
+{% include 'components/title_bar.html' with title=' Journal '  %}
+
+<div class="card p-2">
+
+    <div class="card-body p-4 m-4">
+
+        <h1>Create Journal</h1>
+        <form class="" enctype="multipart/form-data" method="POST">
+            <div class="row">
+
+                <center><h1>Debit</h1></center>
+                <div class="col-md-6 fv-row fv-plugins-icon-container">
+                    <p class="form-group">
+                        <label>{{form.debit_sub_ledger.label}}</label>
+                        {{form.debit_sub_ledger}}
+                    </p>
+                </div>
+
+                <div class="col-md-6 fv-row fv-plugins-icon-container">
+                    <p class="form-group">
+                        <label>{{form.debit_amount.label}}</label>
+                        {{form.debit_amount}}
+                    </p>
+                </div>
+
+                <div class="col-md-6 fv-row fv-plugins-icon-container">
+                    <p class="form-group">
+                        <label>{{form.debit_particulars.label}}</label>
+                        {{form.debit_particulars}}
+                    </p>
+                </div>
+
+                <hr>
+
+                <center><h1>Credit</h1></center>
+                <div class="col-md-6 fv-row fv-plugins-icon-container">
+                    <p class="form-group">
+                        <label>{{form.credit_sub_ledger.label}}</label>
+                        {{form.credit_sub_ledger}}
+                    </p>
+                </div>
+
+                <div class="col-md-6 fv-row fv-plugins-icon-container">
+                    <p class="form-group">
+                        <label>{{form.credit_amount.label}}</label>
+                        {{form.credit_amount}}
+                    </p>
+                </div>
+
+                <div class="col-md-6 fv-row fv-plugins-icon-container">
+                    <p class="form-group">
+                        <label>{{form.credit_particulars.label}}</label>
+                        {{form.credit_particulars}}
+                    </p>
+                </div>
+
+            </div>
+
+
+            {% csrf_token %}
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+
+    </div>
+</div>
+
+<script>
+    let debit_amount = document.querySelector('#id_debit_amount')
+    let credit_amount = document.querySelector('#id_credit_amount')
+
+
+    debit_amount.onkeyup = function(e){
+        credit_amount.value = debit_amount.value
+    }
+
+    credit_amount.onkeyup = function(e){
+        debit_amount.value = credit_amount.value
+    }
+
+</script>
+
+{% endblock %}

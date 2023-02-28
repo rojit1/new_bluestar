@@ -1,20 +1,17 @@
-from django.shortcuts import render
-from django.db import transaction
-from django.http import JsonResponse
+from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView,DetailView,ListView,TemplateView,UpdateView,View
 from root.utils import DeleteMixin
 from .models import AccountChart
 from django.views.generic import TemplateView
 from .forms import AccountChartForm
-
-
+from decimal import Decimal as D
 
 class AccountChartMixin:
     model = AccountChart
     form_class = AccountChartForm
     paginate_by = 10
-    queryset = AccountChart.objects.all()
+    queryset = AccountChart.objects.prefetch_related('accountsubledger_set')
     success_url = reverse_lazy('accountchart_list')
 
 
@@ -57,3 +54,120 @@ class AccountChartUpdate(AccountChartMixin, UpdateView):
 class AccountChartDelete(AccountChartMixin, DeleteMixin, View):
     pass
 
+
+from .models import AccountSubLedger
+from .forms import AccountSubLedgerForm
+class AccountSubLedgerMixin:
+    model = AccountSubLedger
+    form_class = AccountSubLedgerForm
+    paginate_by = 10
+    queryset = AccountSubLedger.objects.all()
+    success_url = reverse_lazy('accountsubledger_list')
+
+class AccountSubLedgerList(AccountSubLedgerMixin, ListView):
+    template_name = "accounting/accountsubledger_list.html"
+    queryset = AccountSubLedger.objects.all()
+
+class AccountSubLedgerDetail(AccountSubLedgerMixin, DetailView):
+    template_name = "accountsubledger/accountsubledger_detail.html"
+
+class AccountSubLedgerCreate(AccountSubLedgerMixin, CreateView):
+    template_name = "accounting/create.html"
+
+class AccountSubLedgerUpdate(AccountSubLedgerMixin, UpdateView):
+    template_name = "update.html"
+
+class AccountSubLedgerDelete(AccountChartMixin, DeleteMixin, View):
+    pass
+
+
+from .models import TblDrJournalEntry, TblCrJournalEntry, TblJournalEntry
+from .forms import JournalEntryForm
+class JournalEntryView(View):
+
+    def get(self, request):
+        form = JournalEntryForm
+        return render(request, 'accounting/journal_entry_create.html', {'form':form})
+    
+    def post(self, request):
+        form = JournalEntryForm(request.POST)
+        if form.is_valid():
+
+            journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username)
+
+            debit_sub_ledger = request.POST.get('debit_sub_ledger')
+            debit_particulars = request.POST.get('debit_particulars')
+            debit_amount = D(request.POST.get('debit_amount', 0.0))
+            debit_sub_ledger = AccountSubLedger.objects.get(pk=int(debit_sub_ledger))
+            debit_sub_ledger_type = debit_sub_ledger.account_chart.account_type
+
+
+            credit_sub_ledger = request.POST.get('credit_sub_ledger')
+            credit_sub_ledger = AccountSubLedger.objects.get(pk=int(credit_sub_ledger))
+            credit_sub_ledger_type = credit_sub_ledger.account_chart.account_type
+            credit_particulars = request.POST.get('credit_particulars')
+            credit_amount = D(request.POST.get('credit_amount', 0.0))
+
+
+
+            TblDrJournalEntry.objects.create(sub_ledger=debit_sub_ledger, journal_entry=journal_entry, particulars=debit_particulars, debit_amount=debit_amount)
+            TblCrJournalEntry.objects.create(sub_ledger=credit_sub_ledger, journal_entry=journal_entry,particulars=credit_particulars, credit_amount=credit_amount)
+
+            if debit_sub_ledger_type in ['Asset', 'Expense']:
+                debit_sub_ledger.total_value =debit_sub_ledger.total_value + debit_amount
+                debit_sub_ledger.save()
+            elif debit_sub_ledger_type in ['Liability', 'Revenue', 'Equity']:
+                debit_sub_ledger.total_value = debit_sub_ledger.total_value - debit_amount
+                debit_sub_ledger.save()
+
+            if credit_sub_ledger_type in ['Asset', 'Expense']:
+                credit_sub_ledger.total_value = credit_sub_ledger.total_value - credit_amount
+                credit_sub_ledger.save()
+
+            elif credit_sub_ledger_type in ['Liability', 'Revenue', 'Equity']:
+                credit_sub_ledger.total_value = credit_sub_ledger.total_value + credit_amount
+                credit_sub_ledger.save()
+
+
+
+        return redirect('accountsubledger_list')
+        return render(request, 'accounting/journal_entry_create.html', {'form':form})
+
+
+class TrialBalanceView(View):
+
+    def get(self, request):
+        trial_balance = []
+        total = {'debit_total':0, 'credit_total':0}
+        subledgers = AccountSubLedger.objects.all()
+        for subled in subledgers:
+            data = {}
+            data['account']=subled.sub_ledger_name
+            account_type = subled.account_chart.account_type
+            data['account_head']=account_type
+
+            if account_type in ['Asset', 'Expense']:
+                if subled.total_value > 0:
+                    data['debit'] = subled.total_value
+                    total['debit_total'] += subled.total_value
+                    data['credit'] = '-'
+                else:
+                    data['credit'] = subled.total_value
+                    total['credit_total'] += subled.total_value
+                    data['debit'] = '-'
+            else:
+                if subled.total_value > 0:
+                    data['credit'] = subled.total_value
+                    total['credit_total'] += subled.total_value
+                    data['debit'] = '-'
+                else:
+                    data['debit'] = subled.total_value
+                    total['debit_total'] += subled.total_value
+                    data['credit'] = '-'
+            trial_balance.append(data)
+        context = {
+            'trial_balance': trial_balance,
+            "total": total
+        }
+
+        return render(request, 'accounting/trial_balance.html', context)

@@ -52,15 +52,27 @@
     get: (searchParams, prop) => searchParams.get(prop),
     });
     let accountType = params.accountType
+    let ledgerType = params.ledgerType
 
     if(validAccountTypes.includes(accountType)){
         document.querySelector('#id_account_type').value=accountType
     }else{
-        alert('Please select valid account type')
+        // alert('Please select valid account type')
     }
+
+    const selectElement = document.querySelector('#id_account_chart') || null
+    if(selectElement){
+
+      for (let i of selectElement.options){
+        if(i.label === ledgerType ){
+          i.selected=true
+        }
+      }
+
+    }
+
 
 
 </script>
 
-{% comment %} {% include 'select2.html' %} {% endcomment %}
 {% endblock %}

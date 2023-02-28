@@ -24,8 +24,32 @@ class AccountSubLedger(AccountBaseModel):
     affects_cash_flow = models.CharField(max_length=20)
 
     def __str__(self):
-        return self.ledger_name
+        return self.sub_ledger_name
     
 
+class TblJournalEntry(AccountBaseModel):
+    employee_name = models.CharField(max_length=100, null=True, blank=True)
 
+    def __str__(self):
+        return 'Journal Entry'
+
+
+class TblCrJournalEntry(AccountBaseModel):
+    sub_ledger = models.ForeignKey(AccountSubLedger, on_delete=models.PROTECT)
+    journal_entry = models.ForeignKey(TblJournalEntry, on_delete=models.PROTECT)
+    particulars = models.TextField(max_length=255)
+    credit_amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f'{self.sub_ledger} -> {self.credit_amount}'
+
+
+class TblDrJournalEntry(AccountBaseModel):
+    sub_ledger = models.ForeignKey(AccountSubLedger, on_delete=models.PROTECT)
+    journal_entry = models.ForeignKey(TblJournalEntry, on_delete=models.PROTECT)
+    particulars = models.TextField(max_length=255)
+    debit_amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f'{self.sub_ledger} -> {self.debit_amount}'
 

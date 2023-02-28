@@ -56,7 +56,11 @@
 
 
         {%include 'components/menu_title.html' with title="Accounting"%}
-        {%include 'components/menu_item.html' with path="accountchart" url='accountchart_list' title='Chart of Accounts' icon="bi bi-chart" %}
+        {%include 'components/menu_item.html' with path="accountchart" url='accountchart_list' title='Chart of Accounts' icon="bi bi-bar-chart" %}
+        {%include 'components/menu_item.html' with path="journal" url='journal_create' title='Journal' icon="bi bi-file-earmark-fill" %}
+        {%include 'components/menu_item.html' with path="trial-balance" url='trial_balance_view' title='Trial Balance' icon="bi bi-file-earmark-spreadsheet" %}
+
+
 
 
         {%include 'components/menu_title.html' with title="User Management"%}

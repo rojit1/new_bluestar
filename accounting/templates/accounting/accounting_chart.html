@@ -7,25 +7,31 @@
   .card {
     margin: 10px;
     padding: 0;
-    border: 2px solid green;
+    border: 2px solid rgb(3, 132, 3);
     box-shadow: 6px 6px 6px rgb(171, 235, 171);
 
   }
 
   .card:hover{
     border: 2px solid rgb(38, 73, 200);
-    box-shadow: 10px 10px 10px rgb(80, 99, 221);
+    box-shadow: 10px 10px 10px rgb(164, 155, 155);
   }
 
   ul{
+    line-height: 250%;
+    
+  }
+
+  .ledger-ul{
     font-size: 120%;
   }
+
 </style>
 
 {% include 'components/title_bar.html' with title=' Chart of Acounts ' %}
 
 <div class="row">
-  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
     <div class="card-body">
       <div class="text-center">
         <h3>Asset</h3>
@@ -34,15 +40,20 @@
         <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
       </div>
       <hr>
-      <ul>
+      <ul class="ledger-ul">
         {% for asset in assets %}
-        <li>{{asset}}</li>
+        <li>{{asset}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
+        <ul>
+          {% for subledger in asset.accountsubledger_set.all %}
+            <li>{{subledger}}</li>
+          {% endfor %}
+        </ul>
         {% endfor %}
       </ul>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
     <div class="card-body">
       <div class="text-center">
         <h3>Liability</h3>
@@ -51,16 +62,20 @@
         <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
       </div>
       <hr>
-      <ul>
+      <ul class="ledger-ul">
         {% for liability in liabilities %}
-        <li>{{liability}}</li>
+        <li>{{liability}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
+        <ul>
+          {% for subledger in liability.accountsubledger_set.all %}
+            <li>{{subledger}}</li>
+          {% endfor %}
+        </ul>
         {% endfor %}
       </ul>
-
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
     <div class="card-body">
       <div class="text-center">
         <h3>Equity</h3>
@@ -68,17 +83,21 @@
             class="btn btn-success btn-sm">Create</button></a>
         <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
       </div>
-
       <hr>
-      <ul>
+      <ul class="ledger-ul">
         {% for equity in equities %}
-        <li>{{equity}}</li>
+        <li>{{equity}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
+        <ul>
+          {% for subledger in equity.accountsubledger_set.all %}
+            <li>{{subledger}}</li>
+          {% endfor %}
+        </ul>
         {% endfor %}
       </ul>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
     <div class="card-body">
       <div class="text-center">
         <h3>Revenue</h3>
@@ -86,17 +105,21 @@
             class="btn btn-success btn-sm">Create</button></a>
         <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
       </div>
-
       <hr>
-      <ul>
+      <ul class="ledger-ul">
         {% for revenue in revenues %}
-        <li>{{revenue}}</li>
+        <li>{{revenue}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
+        <ul>
+          {% for subledger in revenue.accountsubledger_set.all %}
+            <li>{{subledger}}</li>
+          {% endfor %}
+        </ul>
         {% endfor %}
       </ul>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
     <div class="card-body">
       <div class="text-center">
         <h3>Expense</h3>
@@ -104,29 +127,37 @@
             class="btn btn-success btn-sm">Create</button></a>
         <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
       </div>
-
       <hr>
-      <ul>
+      <ul class="ledger-ul">
         {% for expense in expenses %}
-        <li>{{expense}}</li>
+        <li>{{expense}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
+        <ul>
+          {% for subledger in expense.accountsubledger_set.all %}
+            <li>{{subledger}}</li>
+          {% endfor %}
+        </ul>
         {% endfor %}
       </ul>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-4 col-lg-3">
+  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
     <div class="card-body">
       <div class="text-center">
-        <h3>Others</h3>
+        <h3>Other</h3>
         <a href="{% url 'accountchart_create' %}?accountType=Other"><button
             class="btn btn-success btn-sm">Create</button></a>
         <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
       </div>
-
       <hr>
-      <ul>
+      <ul class="ledger-ul">
         {% for other in others %}
-        <li>{{other}}</li>
+        <li>{{other}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
+        <ul>
+          {% for subledger in other.accountsubledger_set.all %}
+            <li>{{subledger}}</li>
+          {% endfor %}
+        </ul>
         {% endfor %}
       </ul>
     </div>

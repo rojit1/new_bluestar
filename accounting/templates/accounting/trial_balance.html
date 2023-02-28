@@ -1,0 +1,54 @@
+{%extends 'base.html'%}
+{% block pagetitle %}Trial Balance {% endblock %}
+{% block home %} {% url 'trial_balance_view' %} {% endblock %}
+{% block title %}Trial Balance {% endblock %}
+{% block content %}
+{% include 'components/title_bar.html' with title=' Trial Balance '  %}
+<div class="card">
+
+    <div class="card-body pt-0">
+        <div id="kt_customers_table_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
+            <div class="table-responsive">
+                <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer"
+                    id="kt_customers_table">
+
+
+                    <thead>
+                        <th>S.N</th>
+                        <th>Account</th>
+                        <th>Account Head</th>
+                        <th>Debit</th>
+                        <th>Credit</th>
+                    </thead>
+                    <tbody class="fw-bold text-gray-600">
+                        {% for data in trial_balance %}
+                        <tr>
+                            <td>{{forloop.counter}}</td>
+                            <td>{{data.account}}</td>
+                            <td>{{data.account_head}}</td>
+                            <td>{{data.debit}}</td>
+                            <td>{{data.credit}}</td>
+                        </tr>
+                        {% endfor %}
+                        <hr>
+                        <tr>
+                            <td></td>
+                            <td>Total</td>
+                            <td></td>
+                            <td><p class="fw-bolder text-primary">{{total.debit_total}}</p> </td>
+                            <td><p class="fw-bolder text-primary">{{total.credit_total}}</p></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {%if object_list%}
+            {% include 'pagination.html' %}
+            {%endif%}
+        </div>
+    </div>
+</div>
+
+<script>
+</script>
+
+{% endblock %}
