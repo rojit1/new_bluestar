@@ -165,6 +165,7 @@ class TrialBalanceView(View):
                     total['debit_total'] += subled.total_value
                     data['credit'] = '-'
             trial_balance.append(data)
+        trial_balance = sorted(trial_balance, key=lambda x:x['account_head'])
         context = {
             'trial_balance': trial_balance,
             "total": total

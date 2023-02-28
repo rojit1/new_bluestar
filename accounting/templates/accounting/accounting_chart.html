@@ -12,27 +12,39 @@
 
   }
 
-  .card:hover{
+  .card:hover {
     border: 2px solid rgb(38, 73, 200);
     box-shadow: 10px 10px 10px rgb(164, 155, 155);
   }
 
-  ul{
+  ul {
     line-height: 250%;
-    
+
   }
 
-  .ledger-ul{
+  .ledger-ul {
     font-size: 120%;
+  }
+
+  #spin {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 100;
+    display: none;
   }
 
 </style>
 
 {% include 'components/title_bar.html' with title=' Chart of Acounts ' %}
 
+<div class="spinner-grow text-warning" id="spin" style="width: 10rem; height: 10rem;" role="status">
+  <span class="sr-only">Loading...</span>
+</div>
+
 <div class="row">
-  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
-    <div class="card-body">
+  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
+    <div class="card-body" id="droppable-Asset" ondragover="dragover_handler(event)" ondrop="drop_handler(event, this)">
       <div class="text-center">
         <h3>Asset</h3>
         <a href="{% url 'accountchart_create' %}?accountType=Asset"><button
@@ -42,19 +54,24 @@
       <hr>
       <ul class="ledger-ul">
         {% for asset in assets %}
-        <li>{{asset}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
-        <ul>
-          {% for subledger in asset.accountsubledger_set.all %}
+        <div draggable="true" id="{{asset.pk}}" ondragstart="drag(event)">
+          <li>{{asset}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a>
+          </li>
+          <ul>
+            {% for subledger in asset.accountsubledger_set.all %}
             <li>{{subledger}}</li>
-          {% endfor %}
-        </ul>
+            {% endfor %}
+          </ul>
+        </div>
+
         {% endfor %}
       </ul>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
-    <div class="card-body">
+  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
+    <div class="card-body" id="droppable-Liability" ondragover="dragover_handler(event)"
+      ondrop="drop_handler(event, this)">
       <div class="text-center">
         <h3>Liability</h3>
         <a href="{% url 'accountchart_create' %}?accountType=Liability"><button
@@ -64,19 +81,23 @@
       <hr>
       <ul class="ledger-ul">
         {% for liability in liabilities %}
-        <li>{{liability}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
-        <ul>
-          {% for subledger in liability.accountsubledger_set.all %}
+        <div draggable="true" id="{{liability.pk}}" ondragstart="drag(event)">
+          <li>{{liability}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{liability}}"
+              class="bi bi-plus fa-lg"></a> </li>
+          <ul>
+            {% for subledger in liability.accountsubledger_set.all %}
             <li>{{subledger}}</li>
-          {% endfor %}
-        </ul>
+            {% endfor %}
+          </ul>
+        </div>
         {% endfor %}
       </ul>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
-    <div class="card-body">
+  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
+    <div class="card-body" id="droppable-Equity" ondragover="dragover_handler(event)"
+      ondrop="drop_handler(event, this)">
       <div class="text-center">
         <h3>Equity</h3>
         <a href="{% url 'accountchart_create' %}?accountType=Equity"><button
@@ -86,19 +107,24 @@
       <hr>
       <ul class="ledger-ul">
         {% for equity in equities %}
-        <li>{{equity}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
-        <ul>
-          {% for subledger in equity.accountsubledger_set.all %}
+        <div draggable="true" id="{{equity.pk}}" ondragstart="drag(event)">
+          <li>{{equity}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{equity}}"
+              class="bi bi-plus fa-lg"></a>
+          </li>
+          <ul>
+            {% for subledger in equity.accountsubledger_set.all %}
             <li>{{subledger}}</li>
-          {% endfor %}
-        </ul>
+            {% endfor %}
+          </ul>
+        </div>
         {% endfor %}
       </ul>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
-    <div class="card-body">
+  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
+    <div class="card-body" id="droppable-Revenue" ondragover="dragover_handler(event)"
+      ondrop="drop_handler(event, this)">
       <div class="text-center">
         <h3>Revenue</h3>
         <a href="{% url 'accountchart_create' %}?accountType=Revenue"><button
@@ -108,19 +134,25 @@
       <hr>
       <ul class="ledger-ul">
         {% for revenue in revenues %}
-        <li>{{revenue}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
-        <ul>
-          {% for subledger in revenue.accountsubledger_set.all %}
+        <div draggable="true" id="{{revenue.pk}}" ondragstart="drag(event)">
+          <li>{{revenue}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{revenue}}"
+              class="bi bi-plus fa-lg"></a>
+          </li>
+          <ul>
+            {% for subledger in revenue.accountsubledger_set.all %}
             <li>{{subledger}}</li>
-          {% endfor %}
-        </ul>
+            {% endfor %}
+          </ul>
+        </div>
         {% endfor %}
+
       </ul>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
-    <div class="card-body">
+  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
+    <div class="card-body" id="droppable-Expense" ondragover="dragover_handler(event)"
+      ondrop="drop_handler(event, this)">
       <div class="text-center">
         <h3>Expense</h3>
         <a href="{% url 'accountchart_create' %}?accountType=Expense"><button
@@ -128,21 +160,27 @@
         <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
       </div>
       <hr>
+
       <ul class="ledger-ul">
         {% for expense in expenses %}
-        <li>{{expense}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
-        <ul>
-          {% for subledger in expense.accountsubledger_set.all %}
+        <div draggable="true" id="{{expense.pk}}" ondragstart="drag(event)">
+          <li>{{expense}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{expense}}"
+              class="bi bi-plus fa-lg"></a>
+          </li>
+          <ul>
+            {% for subledger in expense.accountsubledger_set.all %}
             <li>{{subledger}}</li>
-          {% endfor %}
-        </ul>
+            {% endfor %}
+          </ul>
+        </div>
         {% endfor %}
       </ul>
+
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-6 col-lg-4">
-    <div class="card-body">
+  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
+    <div class="card-body" id="droppable-Other" ondragover="dragover_handler(event)" ondrop="drop_handler(event, this)">
       <div class="text-center">
         <h3>Other</h3>
         <a href="{% url 'accountchart_create' %}?accountType=Other"><button
@@ -152,16 +190,58 @@
       <hr>
       <ul class="ledger-ul">
         {% for other in others %}
-        <li>{{other}}  <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a> </li> 
-        <ul>
-          {% for subledger in other.accountsubledger_set.all %}
+        <div draggable="true" id="{{other.pk}}" ondragstart="drag(event)">
+          <li>{{other}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{other}}" class="bi bi-plus fa-lg"></a>
+          </li>
+          <ul>
+            {% for subledger in other.accountsubledger_set.all %}
             <li>{{subledger}}</li>
-          {% endfor %}
-        </ul>
+            {% endfor %}
+          </ul>
+        </div>
         {% endfor %}
       </ul>
     </div>
   </div>
 </div>
+
+
+<script>
+
+  function drag(ev) {
+    ev.dataTransfer.setData("text", ev.target.id);
+  }
+
+  function dragover_handler(ev) {
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = "move";
+  }
+
+  function drop_handler(ev, el) {
+    let spinner = document.getElementById('spin');
+    spinner.style.display = "block"
+    ev.preventDefault();
+    const data = ev.dataTransfer.getData("text/plain");
+    let uls = el.getElementsByTagName('ul')
+    let ul = uls[0]
+    ul.appendChild(document.getElementById(data));
+    const accountType = el.id.split('-')[1]
+
+    $.ajaxSetup({
+      headers: { "X-CSRFToken": '{{csrf_token}}' }
+    });
+
+    $.ajax({
+      url: `/api/update-account-type/${data}/?accountType=${accountType}`,
+      type: 'PUT',
+      success: function (result) {
+        setTimeout(() => {
+          spinner.style.display = "none";
+        }, 1000)
+      }
+    });
+  }
+
+</script>
 
 {% endblock %}
