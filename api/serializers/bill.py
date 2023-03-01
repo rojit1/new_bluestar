@@ -148,6 +148,14 @@ class TblTaxEntrySerializer(ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class TblTaxEntryVoidSerializer(ModelSerializer):
+    reason = serializers.CharField(required=False)
+    trans_date = serializers.CharField(required=True)
+    class Meta:
+        model = TblTaxEntry
+        exclude = 'fiscal_year',
+
+
 class TblSalesEntrySerializer(ModelSerializer):
     class Meta:
         model = TblSalesEntry
