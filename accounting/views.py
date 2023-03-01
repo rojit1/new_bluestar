@@ -83,14 +83,16 @@ class AccountSubLedgerDelete(AccountChartMixin, DeleteMixin, View):
 
 from .models import TblDrJournalEntry, TblCrJournalEntry, TblJournalEntry
 from .forms import JournalEntryForm
-class JournalEntryView(View):
+class JournalEntryCreateView(View):
 
     def get(self, request):
         form = JournalEntryForm
-        return render(request, 'accounting/journal_entry_create.html', {'form':form})
+        return render(request, 'accounting/journal/journal_entry_create.html', {'form':form})
     
     def post(self, request):
         form = JournalEntryForm(request.POST)
+        import pdb
+        pdb.set_trace()
         if form.is_valid():
 
             journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username)
@@ -130,8 +132,25 @@ class JournalEntryView(View):
 
 
 
-        return redirect('accountsubledger_list')
+        return redirect('journal_list')
         return render(request, 'accounting/journal_entry_create.html', {'form':form})
+
+
+class JournalEntryView(View):
+
+    def get(self, request, pk=None):
+        if pk:
+            journal = TblJournalEntry.objects.get(pk=pk)
+            credit_details = TblCrJournalEntry.objects.get(journal_entry=journal)
+            debit_details = TblDrJournalEntry.objects.get(journal_entry=journal)
+            context = {
+                'credit': credit_details,
+                'debit': debit_details
+            }
+            return render(request, 'accounting/journal/journal_voucher.html', context)
+            
+        journal_entries = TblJournalEntry.objects.all()
+        return render(request, 'accounting/journal/journal_list.html',  {'journal_entries': journal_entries})
 
 
 class TrialBalanceView(View):
@@ -172,3 +191,10 @@ class TrialBalanceView(View):
         }
 
         return render(request, 'accounting/trial_balance.html', context)
+
+
+class ProfitAndLoss(TemplateView):
+    template_name = "accounting/profit_and_loss.html"
+
+class BalanceSheet(TemplateView):
+    template_name = "accounting/balance_sheet.html"

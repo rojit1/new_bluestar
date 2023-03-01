@@ -1,6 +1,7 @@
 from django import forms
 from root.forms import BaseForm
 from .models import AccountChart, TblDrJournalEntry, TblCrJournalEntry, TblJournalEntry
+from django.contrib.admin.widgets import FilteredSelectMultiple
 
 class AccountChartForm(BaseForm, forms.ModelForm):
     class Meta:
@@ -29,25 +30,24 @@ class CrJournalEntryForm(BaseForm, forms.ModelForm):
         fields = '__all__'
         
 
-class JournalEntryForm(BaseForm, forms.Form):
-    debit_sub_ledger = forms.ModelChoiceField(queryset=AccountSubLedger.objects.all(), label='Sub Ledger')
-    debit_particulars = forms.CharField(max_length=255, label='Particulars')
-    debit_amount = forms.FloatField(initial=0, label='Amount')
+class JournalEntryForm(forms.Form):
+    debit_sub_ledger = forms.ModelChoiceField(queryset=AccountSubLedger.objects.all())
+    debit_particulars = forms.CharField(max_length=255)
+    debit_amount = forms.FloatField(initial=0,)
 
-    credit_sub_ledger = forms.ModelChoiceField(queryset=AccountSubLedger.objects.all(), label='Sub Ledger')
-    credit_particulars = forms.CharField(max_length=255, label='Particulars')
-    credit_amount = forms.FloatField(initial=0, label="Amount")
+    credit_sub_ledger = forms.ModelChoiceField(queryset=AccountSubLedger.objects.all())
+    credit_particulars = forms.CharField(max_length=255)
+    credit_amount = forms.FloatField(initial=0)
 
-    class Meta:
-        widgets = {
-                "debit_sub_ledger": forms.Select(
-                    attrs={
-                        "class": "form-select",
-                        "data-control": "select2",
-                        "data-placeholder": "Select Product",
-                    }
-                ),
-            }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["debit_sub_ledger"].widget.attrs["class"] = 'form-select'
+        self.fields["debit_sub_ledger"].widget.attrs["data-control"] = 'select2'
+
+        self.fields["credit_sub_ledger"].widget.attrs["class"] = 'form-select'
+        self.fields["credit_sub_ledger"].widget.attrs["data-control"] = 'select2'
+
+
 
     
 

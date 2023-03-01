@@ -1,0 +1,110 @@
+{%extends 'base.html'%}
+{% block pagetitle %}Journal Voucher {% endblock %}
+
+{% block title %}Journal Voucher {% endblock %}
+
+{% block content %}
+{% include 'components/title_bar.html' with title=' Journal Voucher' %}
+
+<style>
+    input {
+        border: 0;
+        outline: 0;
+        border-bottom: 2px solid rgb(94, 89, 89);
+        width: 100%;
+    }
+
+    input:focus {
+        border-color: rgb(71, 46, 214);
+
+    }
+</style>
+
+<div class="card">
+    <div class="card-header p-4 m-auto">
+        <center>
+                <h2>Journal Voucher</h2> <br>
+                <p>Date: ________________</p>
+        </center>
+    </div>
+    <div class="card-body pt-0">
+        <div id="kt_customers_table_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle table-row-dashed fs-6 gy-5 dataTable no-footer"
+                    id="kt_customers_table">
+
+                    <thead>
+                        <th>Sub Ledger</th>
+                        <th>Particulars</th>
+                        <th>L.F</th>
+                        <th>Debit(Rs)</th>
+                        <th>Credit(Rs)</th>
+                    </thead>
+                    <tbody class="fw-bold text-gray-600">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <div class="row">
+                                <tr>
+                                    <td>{{form.debit_sub_ledger}}</td>
+                                    <td class="col-md-5">{{form.debit_particulars}}</td>
+                                    <td></td>
+                                    <td class="col-md-2">{{form.debit_amount}}</td>
+                                    <td class="col-md-2">------</td>
+                                </tr>
+                            </div>
+
+                            <div class="row">
+                                <tr>
+                                    <td>{{form.credit_sub_ledger}}</td>
+                                    <td class="col-md-5">{{form.credit_particulars}}</td>
+                                    <td></td>
+                                    <td class="col-md-2">-------</td>
+                                    <td class="col-md-2">{{form.credit_amount}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td>Total</td>
+                                    <td class="col-md-5"></td>
+                                    <td></td>
+                                    <td class="col-md-2" id="total-debit"></td>
+                                    <td class="col-md-2" id="total-credit"></td>                        
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <button type="submit" class="btn btn-primary">Submit</button>
+                                    </td>
+                                </tr>
+                            </div>
+                        </form>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    let debit_amount = document.querySelector('#id_debit_amount')
+    let credit_amount = document.querySelector('#id_credit_amount')
+
+    let total_debit = document.querySelector('#total-debit')
+    let total_credit = document.querySelector('#total-credit')
+
+
+
+    debit_amount.onkeyup = function(e){
+        credit_amount.value = debit_amount.value
+        total_credit.innerText=credit_amount.value
+        total_debit.innerText=credit_amount.value
+    }
+
+    credit_amount.onkeyup = function(e){
+        debit_amount.value = credit_amount.value
+        total_credit.innerText=credit_amount.value
+        total_debit.innerText=credit_amount.value
+    }
+</script>
+
+
+{% endblock %}
