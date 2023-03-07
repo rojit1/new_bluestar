@@ -83,6 +83,7 @@ class AccountSubLedgerDelete(AccountChartMixin, DeleteMixin, View):
 
 from .models import TblDrJournalEntry, TblCrJournalEntry, TblJournalEntry
 from .forms import JournalEntryForm
+
 class JournalEntryCreateView(View):
 
     def get(self, request):
@@ -91,8 +92,6 @@ class JournalEntryCreateView(View):
     
     def post(self, request):
         form = JournalEntryForm(request.POST)
-        import pdb
-        pdb.set_trace()
         if form.is_valid():
 
             journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username)
@@ -184,7 +183,7 @@ class TrialBalanceView(View):
                     total['debit_total'] += subled.total_value
                     data['credit'] = '-'
             trial_balance.append(data)
-        trial_balance = sorted(trial_balance, key=lambda x:x['account_head'])
+        # trial_balance = sorted(trial_balance, key=lambda x:x['account_head'])
         context = {
             'trial_balance': trial_balance,
             "total": total

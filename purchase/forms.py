@@ -2,12 +2,14 @@ from django import forms
 from .models import Vendor, ProductPurchase
 from root.forms import BaseForm
 from product.models import Product
+from accounting.models import AccountChart, AccountSubLedger
 
 class VendorForm(BaseForm, forms.ModelForm):
     class Meta:
         model = Vendor
         fields = ['name', 'address', 'contact', 'pan_no']
-    
+
+
 class ProductPurchaseForm(BaseForm, forms.ModelForm):
     DISCOUNT_PERCENTAGE_CHOICES = (
         (0,0),
@@ -82,5 +84,50 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
         }
     
 
-    
+"""  Asset Purchase  """
+
+from .models import AssetPurchase, Asset
+
+class AssetPurchaseForm(BaseForm, forms.ModelForm):
+    assets = forms.ModelChoiceField(
+        queryset=Asset.objects.all()
+    )
+    vendor = forms.ModelChoiceField(
+        queryset=Vendor.objects.all()
+    )
+    sub_ledger = forms.ModelChoiceField(
+        AccountSubLedger.objects.filter(account_chart=AccountChart.objects.filter(ledger__icontains='f').first())
+        )
+
+
+    field_order = [ 'bill_no', 'bill_date', 'pp_no', 'vendor', 'assets', 'sub_total', 'discount_percentage', 'discount_amount', 'taxable_amount',
+                'non_taxable_amount', 'tax_amount', 'grand_total', 'amount_in_words', 'payment_mode', 'sub_ledger']
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["sub_total"].widget.attrs["readonly"] = True
+        self.fields["taxable_amount"].widget.attrs["readonly"] = True
+        self.fields["non_taxable_amount"].widget.attrs["readonly"] = True
+        self.fields["tax_amount"].widget.attrs["readonly"] = True
+        self.fields["grand_total"].widget.attrs["readonly"] = True
+        self.fields["tax_amount"].label = "VAT Amount"
+        self.fields["discount_amount"].widget.attrs["readonly"] = True
+        self.fields["amount_in_words"].widget.attrs["readonly"] = True
+        # self.fields["assets"].widget.attrs = {
+        #     "class": "form-select",
+        #     "data-control": "select2",
+        #     "data-placeholder": "Select Asset",
+        # }
+
+        self.fields["vendor"].widget.attrs = {
+            "class": "form-select",
+            "data-control": "select2",
+            "data-placeholder": "Select Vendor",
+        }
+
+    class Meta:
+        model = AssetPurchase
+        fields = '__all__'
+        exclude = ['is_deleted', 'status', 'deleted_at', 'sorting_order', 'is_featured']
 

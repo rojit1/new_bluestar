@@ -241,10 +241,6 @@ class PurchaseBookListView(ExportExcelMixin,View):
         wb.save(response)
         return response
 
-        
-
-
-
 
     def get(self, request, *args, **kwargs):
         today = date.today()
@@ -274,3 +270,102 @@ class PurchaseBookListView(ExportExcelMixin,View):
 
 
         return render(request, 'purchase/purchase_book.html', context)
+
+
+"""  ***************   Asset Purchase  ****************  """
+
+
+from .models import AssetPurchase, Asset, AssetPurchaseItem
+from .forms import AssetPurchaseForm
+from accounting.models import TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountSubLedger
+
+class AssetPurchaseMixin:
+    model = AssetPurchase
+    form_class = AssetPurchaseForm
+    paginate_by = 10
+    queryset = AssetPurchase.objects.filter(status=True,is_deleted=False)
+    success_url = reverse_lazy('assetpurchase_list')
+
+class AssetPurchaseList(AssetPurchaseMixin, ListView):
+    template_name = "assetpurchase/assetpurchase_list.html"
+    queryset = AssetPurchase.objects.filter(status=True,is_deleted=False)
+
+class AssetPurchaseDetail(AssetPurchaseMixin, DetailView):
+    template_name = "assetpurchase/assetpurchase_detail.html"
+
+
+class AssetPurchaseUpdate(AssetPurchaseMixin, UpdateView):
+    template_name = "update.html"
+
+# class AssetPurchaseDelete(AssetPurchaseMixin, DeleteMixin, View):
+#     pass
+
+class AssetPurchaseCreate(CreateView):
+    model = AssetPurchase
+    form_class = AssetPurchaseForm
+    template_name = "assetpurchase/assetpurchase_create.html"
+
+    def post(self, request):
+        bill_no = request.POST.get('bill_no', None)
+        bill_date = request.POST.get('bill_date', None)
+        vendor_id = request.POST.get('vendor')
+        sub_total = request.POST.get('sub_total')
+        discount_percentage = request.POST.get('discount_percentage')
+        discount_amount = request.POST.get('discount_amount')
+        taxable_amount = request.POST.get('taxable_amount')
+        non_taxable_amount = request.POST.get('non_taxable_amount')
+        tax_amount = request.POST.get('tax_amount')
+        grand_total = request.POST.get('grand_total')
+        amount_in_words = request.POST.get('amount_in_words')
+        payment_mode = request.POST.get('payment_mode')
+        debit_sub_ledger_pk = request.POST.get('sub_ledger')
+
+        asset_purchase = AssetPurchase(
+            bill_no=bill_no,
+            vendor_id=vendor_id,sub_total=sub_total, bill_date=bill_date,
+            discount_percentage=discount_percentage,discount_amount=discount_amount,
+            taxable_amount=taxable_amount, non_taxable_amount=non_taxable_amount,
+            tax_amount=tax_amount, grand_total=grand_total,
+            amount_in_words=amount_in_words, payment_mode=payment_mode
+        )
+        asset_purchase.save()
+
+
+        selected_item_list = request.POST.get('select_items_list', [])
+        selected_item_list = selected_item_list.split(',')
+
+
+        for item in selected_item_list:
+            if not Asset.objects.filter(title=item).exists():
+                asset = Asset.objects.create(title=item)
+                quantity = int(request.POST.get(f'id_bill_item_quantity_{item}'))
+                rate = float(request.POST.get(f'id_bill_item_rate_{item}'))
+                item_total = rate * quantity
+                AssetPurchaseItem.objects.create(asset=asset, asset_purchase=asset_purchase, rate=rate, quantity=quantity, item_total=item_total)
+
+            else:
+                asset = Asset.objects.get(title=item)
+                quantity = int(request.POST.get(f'id_bill_item_quantity_{item}'))
+                rate = float(request.POST.get(f'id_bill_item_rate_{item}'))
+                item_total = rate * quantity
+                AssetPurchaseItem.objects.create(asset=asset, asset_purchase=asset_purchase, rate=rate, quantity=quantity, item_total=item_total)
+
+        # if payment_mode == 'Cash':
+
+        #     try:
+        #         credit_sub_ledger = AccountSubLedger.objects.get(sub_ledger_name=payment_mode)
+        #         debit_sub_ledger = AccountSubLedger.objects.get(pk=debit_sub_ledger_pk)
+
+        #         journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username)
+
+        #         TblDrJournalEntry.objects.create(sub_ledger=debit_sub_ledger, journal_entry=journal_entry, particulars=f'Debit from bill {bill_no}', debit_amount=grand_total)
+        #         credit_sub_ledger.total_value -= grand_total
+        #         TblCrJournalEntry.objects.create(sub_ledger=credit_sub_ledger, journal_entry=journal_entry,particulars=f'Cash cr. from bill {bill_no}', credit_amount=grand_total)
+        #         debit_sub_ledger.total_value += grand_total
+        #     except Exception:
+        #         print(Exception)
+
+        return redirect('/')
+    
+
+

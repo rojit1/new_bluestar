@@ -1273,6 +1273,7 @@ class ReturnEntryViewExportExcel(View):
 
 class CustomerWiseSalesInvoiceRegister(BillFilterDateMixin, ExportExcelMixin, ListView):
     template_name = "bill/report/customer_wise_sales.html"
+
     queryset = Bill.objects.values("customer__name").annotate(
         quantity=Sum("bill_items__product_quantity"),
         vat=Sum("tax_amount"),

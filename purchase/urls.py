@@ -20,3 +20,12 @@ urlpatterns += [
     path('purchase/', PurchaseListView.as_view(), name="purchase_list"),
     path('pb/', PurchaseBookListView.as_view(), name="purchase_book_list")
 ]
+
+from .views import AssetPurchaseList,AssetPurchaseDetail,AssetPurchaseCreate,AssetPurchaseUpdate#,AssetPurchaseDelete
+urlpatterns += [
+path('asset/', AssetPurchaseList.as_view(), name='assetpurchase_list'),
+path('asset/<int:pk>/', AssetPurchaseDetail.as_view(), name='assetpurchase_detail'),
+path('asset/create/', AssetPurchaseCreate.as_view(), name='assetpurchase_create'),
+path('asset/<int:pk>/update/', AssetPurchaseUpdate.as_view(), name='assetpurchase_update'),
+# path('asset/delete', AssetPurchaseDelete.as_view(), name='assetpurchase_delete'),
+]
