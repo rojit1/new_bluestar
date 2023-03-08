@@ -1,7 +1,7 @@
 from datetime import datetime
 import black
 from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save
+
 from django.shortcuts import get_object_or_404
 
 from django.db import models
@@ -10,7 +10,7 @@ from django.forms import FloatField
 from organization.models import Organization
 from product.models import Product, ProductStock
 from root.utils import BaseModel
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 
 User = get_user_model()
 
@@ -133,15 +133,16 @@ class BillItem(BaseModel):
 ''' Signal for Decresing Product Stock after Sold '''
 
 def update_stock(sender, instance, **kwargs):
-    stock = get_object_or_404(ProductStock, product=instance.product)
+    stock = ProductStock.objects.get(product=instance.product)
     try:
         stock.stock_quantity = stock.stock_quantity - int(instance.product_quantity)
         stock.save()
     except Exception as e:
-        pass
+        print(e)
 
 post_save.connect(update_stock, sender=BillItem)
 
+"""  **************************************** """
 
 
 class Bill(BaseModel):

@@ -61,18 +61,22 @@ class BillSerializer(ModelSerializer):
             **validated_data, organization=Organization.objects.last()
         )
 
-        for item in items_data:
+        
+        try:
+            for item in items_data:
+                bill_item = BillItem.objects.create(
+                    product_quantity=item["product_quantity"],
+                    rate=item["rate"],
+                    product_title=item["product"].title,
+                    unit_title=item["product"].unit,
+                    amount=item["product_quantity"] * item["rate"],
+                    product=item['product']
+                )
 
-            bill_item = BillItem.objects.create(
-                product_quantity=item["product_quantity"],
-                rate=item["rate"],
-                product_title=item["product"].title,
-                unit_title=item["product"].unit,
-                amount=item["product_quantity"] * item["rate"],
-            )
-
-            bill_items.append(bill_item)
-        bill.bill_items.add(*bill_items)
+                bill_items.append(bill_item)
+            bill.bill_items.add(*bill_items)
+        except Exception as E:
+            print("Exception ",E)
         return bill
 
 

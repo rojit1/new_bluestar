@@ -7,6 +7,7 @@ from user.models import Customer
 
 
 
+
 class ProductCategory(BaseModel):
     title = models.CharField(max_length=255, verbose_name="Category Title")
     slug = models.SlugField(unique=True, verbose_name="Category Slug")
@@ -49,12 +50,18 @@ class ProductStock(BaseModel):
 
 
 ''' Signal to create ProductStock after Product instance is created '''
-@receiver(post_save, sender=Product)
-def create_stock(sender, created, instance, **kwargs):
-    if created:
-        stock = ProductStock(product=instance, stock_quantity=0)
-        stock.save()
 
+
+def create_stock(sender, instance, **kwargs):
+    try:
+        ProductStock.objects.create(product=instance)
+    except Exception as e:
+        print(e)
+
+post_save.connect(create_stock, sender=Product)
+
+
+"""      ***********************       """
 
 from django.contrib.auth import get_user_model
 
