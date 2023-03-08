@@ -1,48 +1,124 @@
 {%extends 'base.html'%}
 {% block pagetitle %} P&L Statement {% endblock %}
 {% block home %} {% url 'trial_balance_view' %} {% endblock %}
-{% block title %} P&L statement {% endblock %}
+{% block title %} Balance Sheet {% endblock %}
 {% block content %}
-{% include 'components/title_bar.html' with title=' P&L Statement'  %}
+{% include 'components/title_bar.html' with title=' Balance Sheet' %}
 <div class="card">
 
     <div class="card-body pt-0">
         <div class="card-header p-4">
             <center class="m-auto">
-                    <h2>Barc</h2> <br>
-                    <h2>Balance Sheet</h2> <br>
-                    <p>Date: ________________</p>
+                <h2>Barc</h2> <br>
+                <h2>Balance Sheet</h2> <br>
+                <p>Date: ________________</p>
             </center>
         </div>
         <div id="kt_customers_table_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
             <div class="table-responsive">
-                <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer"
-                    id="kt_customers_table">
-                    <thead>
-                        <th class="col-5">Liabilities & Capital</th>
-                        <th>Amount</th>
-                        <th class="col-5">Assets</th>
-                        <th>Amount</th>
-                    </thead>
-                    <tbody class="fw-bold text-gray-600">
-                        <tr>
-                            <td>a</td>
-                            <td>a</td>
-                            <td>a</td>
-                            <td>a</td>
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer"
+                            id="asset_table">
+                            <thead>
+                                <th class="col-9">Assets</th>
+                                <th>Amount</th>
+                            </thead>
+                            <tbody class="fw-bold text-gray-600">
 
-                        </tr>
-                    </tbody>
-                </table>
+                                {% for k,v in assets.items %}
+                                <tr class="fw-bolder">
+                                    <td>{{k}}</td>
+                                </tr>
+                                {% for item in v %}
+                                <tr>
+                                    <td class="px-8">{{ item.sub_ledger_name }}</td>
+                                    <td>{{ item.total_value }}</td>
+
+                                </tr>
+                                {% endfor %}
+                                    
+                                {% endfor %}
+
+                                {% if asset_retained_earnings %}
+                                    <tr class="fw-bolder">
+                                        <td>Share Holders</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-8">Retained Earnings</td>
+                                        <td>{{ asset_retained_earnings }}</td>
+
+                                    </tr>
+                                {% endif %}
+                                
+                                <tr class="text-primary bg-secondary">
+                                    <td>Total</td>
+                                    <td>{{asset_total}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer"
+                            id="liability_table">
+                            <thead>
+                                <th class="col-9">Capital & Liabilities</th>
+                                <th>Amount</th>
+                            </thead>
+                            <tbody class="fw-bold text-gray-600">
+                                {% for k,v in liabilities.items %}
+                                <tr class="fw-bolder">
+                                    <td>{{k}}</td>
+                                </tr>
+                                {% for item in v %}
+                                <tr>
+                                    <td class="px-8">{{ item.sub_ledger_name }}</td>
+                                    <td>{{ item.total_value }}</td>
+
+                                </tr>
+                                {% endfor %}
+                                
+                                {% endfor %}
+
+                                {% if lib_retained_earnings %}
+                                    <tr class="fw-bolder">
+                                        <td>Share Holders</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-8">Retained Earnings</td>
+                                        <td>{{ lib_retained_earnings }}</td>
+
+                                    </tr>
+                                {% endif %}
+                                <tr class="text-primary bg-secondary">
+                                    <td>Total</td>
+                                    <td>{{liability_total}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            {%if object_list%}
-            {% include 'pagination.html' %}
-            {%endif%}
+
         </div>
     </div>
 </div>
 
 <script>
+
+    asset_table = document.getElementById('asset_table')
+    liability_table = document.getElementById('liability_table')
+
+    if (asset_table.offsetHeight > liability_table.offsetHeight ){
+        liability_table.offsetHeight.style.height = asset_table.offsetHeight+"px";
+    }else{
+        asset_table.offsetHeight.style.height = "100px"//liability_table.offsetHeight+"px"
+    }
+
+    console.log(asset_table.offsetHeight > liability_table.offsetHeight)
+    asset_table.offsetHeight = liability_table.offsetHeight
+
+
 </script>
 
 {% endblock %}

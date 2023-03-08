@@ -18,25 +18,46 @@
             <div class="table-responsive">
                 <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer"
                     id="kt_customers_table">
-                    <thead>
+                    <thead class="bg-secondary">
                         <th class="col-7">Income</th>
                         <th>Amount</th>
                         <th>Amount</th>
                     </thead>
                     <tbody class="fw-bold text-gray-600">
+                        {% for revenue in revenues %}
+                        <tr>
+                            <td>{{revenue.title}}</td>
+                            <td>{{revenue.amount}}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td></td>
+                            <td>{{revenue_total}}</td>
+                            <td>{{revenue_total}}</td>
+                        </tr>
                         
                     </tbody>
                 </table>
 
                 <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer"
                     id="kt_customers_table">
-                    <thead>
+                    <thead class="bg-secondary">
                         <th class="col-7">Expenses</th>
                         <th>Amount</th>
                         <th>Amount</th>
                     </thead>
                     <tbody class="fw-bold text-gray-600">
-                        
+                        {% for expense in expenses %}
+                        <tr>
+                            <td>{{expense.title}}</td>
+                            <td>{{expense.amount}}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td></td>
+                            <td>{{expense_total}}</td>
+                            <td>{{expense_total}}</td>
+                        </tr>
                     </tbody>
                 </table
             </div>

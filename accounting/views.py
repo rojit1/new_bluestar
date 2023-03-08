@@ -6,6 +6,8 @@ from .models import AccountChart
 from django.views.generic import TemplateView
 from .forms import AccountChartForm
 from decimal import Decimal as D
+from django.db.models import Q, Sum
+
 
 class AccountChartMixin:
     model = AccountChart
@@ -195,5 +197,74 @@ class TrialBalanceView(View):
 class ProfitAndLoss(TemplateView):
     template_name = "accounting/profit_and_loss.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        expenses = AccountSubLedger.objects.filter(account_chart__account_type="Expense")
+        revenues = AccountSubLedger.objects.filter(account_chart__account_type="Revenue")
+
+        revenue_list= []
+        revenue_total = 0
+        expense_list= []
+        expense_total = 0
+
+        for revenue in revenues:
+            revenue_list.append({'title':revenue.sub_ledger_name, 'amount': revenue.total_value})
+            revenue_total += revenue.total_value
+
+        for expense in expenses:
+            expense_list.append({'title':expense.sub_ledger_name, 'amount': expense.total_value})
+            expense_total += expense.total_value
+
+        context['expenses'] = expense_list
+        context['expense_total'] = expense_total
+        context['revenues'] = revenue_list
+        context['revenue_total'] = revenue_total
+
+        return context
+    
+
 class BalanceSheet(TemplateView):
     template_name = "accounting/balance_sheet.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        asset_dict = {}
+        liability_dict = {}
+
+        assets = AccountChart.objects.filter(account_type='Asset')
+        for ledger in assets:
+            sub = AccountSubLedger.objects.filter(account_chart__ledger=ledger, total_value__gt=0)
+            if sub:
+                asset_dict[ledger.ledger] = sub
+
+
+        liabilities = AccountChart.objects.filter(Q(account_type="Liability") | Q(account_type="Equity") )
+        for ledger in liabilities:
+            sub = AccountSubLedger.objects.filter(account_chart__ledger=ledger, total_value__gt=0)
+            if sub:
+                liability_dict[ledger.ledger] = sub
+
+        asset_total = AccountSubLedger.objects.filter(account_chart__account_type='Asset').aggregate(Sum('total_value')).get('total_value__sum')
+        liability_total = AccountSubLedger.objects.filter(Q(account_chart__account_type="Liability") | Q(account_chart__account_type="Equity") )\
+                                    .aggregate(Sum('total_value')).get('total_value__sum')
+        
+
+
+        if asset_total > liability_total:
+            context['lib_retained_earnings'] =  asset_total-liability_total
+            context['liability_total'] = liability_total + asset_total-liability_total
+            context['asset_total'] = asset_total
+
+        else:
+            context['asset_retained_earnings'] =  liability_total-asset_total
+            context['asset_total'] = asset_total + liability_total-asset_total
+            context['liability_total'] = liability_total
+            
+
+        context['assets'] = asset_dict
+        context['liabilities'] =  liability_dict
+
+
+
+        return context
