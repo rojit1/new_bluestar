@@ -265,6 +265,8 @@ class BalanceSheet(TemplateView):
         context['assets'] = asset_dict
         context['liabilities'] =  liability_dict
 
-
-
         return context
+    
+
+class LedgerStandardView(TemplateView):
+    template_name = "accounting/standard.html"

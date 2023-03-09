@@ -14,13 +14,13 @@
                 <p>Date: ________________</p>
             </center>
         </div>
-        <div id="kt_customers_table_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
+
             <div class="table-responsive">
                 <div class="row">
                     <div class="col-md-6">
-                        <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer"
+                        <table class="table align-middle table-row-dashed fs-6 gy-5 no-footer"
                             id="asset_table">
-                            <thead>
+                            <thead class="text-primary fs-3 fw-bolder">
                                 <th class="col-9">Assets</th>
                                 <th>Amount</th>
                             </thead>
@@ -44,13 +44,18 @@
                                     <tr class="fw-bolder">
                                         <td>Share Holders</td>
                                     </tr>
-                                    <tr>
+                                    <tr class="text-danger">
                                         <td class="px-8">Retained Earnings</td>
                                         <td>{{ asset_retained_earnings }}</td>
 
                                     </tr>
                                 {% endif %}
-                                
+                                <tbody id="dummy-assets">
+
+
+
+                                </tbody>
+                                                                
                                 <tr class="text-primary bg-secondary">
                                     <td>Total</td>
                                     <td>{{asset_total}}</td>
@@ -59,9 +64,9 @@
                         </table>
                     </div>
                     <div class="col-md-6">
-                        <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer"
+                        <table class="table align-middle table-row-dashed fs-6 gy-5"
                             id="liability_table">
-                            <thead>
+                            <thead class="text-primary fw-bolder fs-3">
                                 <th class="col-9">Capital & Liabilities</th>
                                 <th>Amount</th>
                             </thead>
@@ -84,12 +89,13 @@
                                     <tr class="fw-bolder">
                                         <td>Share Holders</td>
                                     </tr>
-                                    <tr>
+                                    <tr class="text-success">
                                         <td class="px-8">Retained Earnings</td>
                                         <td>{{ lib_retained_earnings }}</td>
 
                                     </tr>
                                 {% endif %}
+                                <tbody id="dummy-liabilities"></tbody>
                                 <tr class="text-primary bg-secondary">
                                     <td>Total</td>
                                     <td>{{liability_total}}</td>
@@ -102,21 +108,44 @@
 
         </div>
     </div>
-</div>
+
 
 <script>
 
-    asset_table = document.getElementById('asset_table')
-    liability_table = document.getElementById('liability_table')
 
-    if (asset_table.offsetHeight > liability_table.offsetHeight ){
-        liability_table.offsetHeight.style.height = asset_table.offsetHeight+"px";
-    }else{
-        asset_table.offsetHeight.style.height = "100px"//liability_table.offsetHeight+"px"
+    asset_table_len = document.getElementById('asset_table').rows.length
+    liability_table_len = document.getElementById('liability_table').rows.length
+    let dummyAssets = document.getElementById('dummy-assets')
+    let dummyLiabilities = document.getElementById('dummy-liabilities')
+
+
+    function createElementForTable(){
+        const tr = document.createElement('tr')
+        const td = document.createElement('td')
+        const hiddenText = document.createTextNode("hidden");
+        td.appendChild(hiddenText)
+        td.style.visibility = "hidden"
+        tr.appendChild(td)
+        return tr
     }
 
-    console.log(asset_table.offsetHeight > liability_table.offsetHeight)
-    asset_table.offsetHeight = liability_table.offsetHeight
+    if (window.innerWidth > 700) {
+        if(asset_table_len > liability_table_len){
+
+        for (let i =0; i<asset_table_len-liability_table_len; i++){
+            dummyLiabilities.appendChild(createElementForTable())
+        }
+
+    }else{
+
+        for (let i =0; i<liability_table_len - asset_table_len; i++){
+            dummyAssets.appendChild(createElementForTable())
+        }
+
+    }
+
+    }                           
+    
 
 
 </script>

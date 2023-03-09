@@ -25,208 +25,327 @@
   .ledger-ul {
     font-size: 120%;
   }
-
 </style>
 
 {% include 'components/title_bar.html' with title=' Chart of Acounts ' %}
 
-
 <div class="row">
-  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
-    <div class="card-body" id="droppable-Asset" ondragover="dragover_handler(event)" ondrop="drop_handler(event, this)">
-      <div class="text-center">
-        <h3>Asset</h3>
-        <a href="{% url 'accountchart_create' %}?accountType=Asset"><button
-            class="btn btn-success btn-sm">Create</button></a>
-        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
-      </div>
-      <hr>
-      <ul class="ledger-ul">
-        {% for asset in assets %}
-        <div draggable="true" id="{{asset.pk}}" ondragstart="drag(event)">
-          <li class="fw-bolder">{{asset}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a>
-          </li>
-          <ul>
-            {% for subledger in asset.accountsubledger_set.all %}
-            <li>{{subledger}}</li>
-            {% endfor %}
-          </ul>
-        </div>
 
-        {% endfor %}
-      </ul>
+  <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4">
+    <div class="card">
+      <div class="card-body" id="droppable-Asset" ondragover="dragover_handler(event)"
+        ondrop="drop_handler(event, this)">
+        <div class="text-center">
+          <h3>Asset</h3>
+          <a href="{% url 'accountchart_create' %}?accountType=Asset"><button
+              class="btn btn-success btn-sm">Create</button></a>
+          <button type="button" class="btn btn-info btn-sm" onclick="showDetails('assets')">Details</button>
+        </div>
+        <hr>
+        <ul class="ledger-ul">
+          {% for asset in assets %}
+          <div draggable="true" id="{{asset.pk}}" ondragstart="drag(event)">
+            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{asset.pk}}>
+              {{asset}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a>
+            </li>
+            <ul>
+              {% for subledger in asset.accountsubledger_set.all %}
+              <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
+                title="{{subledger.total_value}}">
+                {{subledger}}</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          {% endfor %}
+        </ul>
+      </div>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
-    <div class="card-body" id="droppable-Liability" ondragover="dragover_handler(event)"
-      ondrop="drop_handler(event, this)">
-      <div class="text-center">
-        <h3>Liability</h3>
-        <a href="{% url 'accountchart_create' %}?accountType=Liability"><button
-            class="btn btn-success btn-sm">Create</button></a>
-        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
-      </div>
-      <hr>
-      <ul class="ledger-ul">
-        {% for liability in liabilities %}
-        <div draggable="true" id="{{liability.pk}}" ondragstart="drag(event)">
-          <li class="fw-bolder">{{liability}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{liability}}"
-              class="bi bi-plus fa-lg"></a> </li>
-          <ul>
-            {% for subledger in liability.accountsubledger_set.all %}
-            <li>{{subledger}}</li>
-            {% endfor %}
-          </ul>
+  <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 d-flex">
+    <div class="card w-100">
+      <div class="card-body" id="droppable-Liability" ondragover="dragover_handler(event)"
+        ondrop="drop_handler(event, this)">
+        <div class="text-center">
+          <h3>Liability</h3>
+          <a href="{% url 'accountchart_create' %}?accountType=Liability"><button
+              class="btn btn-success btn-sm">Create</button></a>
+          <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
         </div>
-        {% endfor %}
-      </ul>
+        <hr>
+        <ul class="ledger-ul">
+          {% for liability in liabilities %}
+          <div draggable="true" id="{{liability.pk}}" ondragstart="drag(event)">
+            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{liability.pk}}>
+              {{liability}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{liability}}"
+                class="bi bi-plus fa-lg"></a> </li>
+            <ul>
+              {% for subledger in liability.accountsubledger_set.all %}
+              <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
+                title="{{subledger.total_value}}">{{subledger}}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 d-flex">
+    <div class="card w-100">
+      <div class="card-body" id="droppable-Equity" ondragover="dragover_handler(event)"
+        ondrop="drop_handler(event, this)">
+        <div class="text-center">
+          <h3>Equity</h3>
+          <a href="{% url 'accountchart_create' %}?accountType=Equity"><button
+              class="btn btn-success btn-sm">Create</button></a>
+          <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+        </div>
+        <hr>
+        <ul class="ledger-ul">
+          {% for equity in equities %}
+          <div draggable="true" id="{{equity.pk}}" ondragstart="drag(event)">
+            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{equity.pk}}>
+              {{equity}}
+              <a href="{% url 'accountsubledger_create' %}?ledgerType={{equity}}" class="bi bi-plus fa-lg"></a>
+            </li>
+            <ul>
+              {% for subledger in equity.accountsubledger_set.all %}
+              <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
+                title="{{subledger.total_value}}">{{subledger}}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
-    <div class="card-body" id="droppable-Equity" ondragover="dragover_handler(event)"
-      ondrop="drop_handler(event, this)">
-      <div class="text-center">
-        <h3>Equity</h3>
-        <a href="{% url 'accountchart_create' %}?accountType=Equity"><button
-            class="btn btn-success btn-sm">Create</button></a>
-        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
-      </div>
-      <hr>
-      <ul class="ledger-ul">
-        {% for equity in equities %}
-        <div draggable="true" id="{{equity.pk}}" ondragstart="drag(event)">
-          <li class="fw-bolder">{{equity}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{equity}}"
-              class="bi bi-plus fa-lg"></a>
-          </li>
-          <ul>
-            {% for subledger in equity.accountsubledger_set.all %}
-            <li>{{subledger}}</li>
-            {% endfor %}
-          </ul>
+  <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 d-flex">
+    <div class="card w-100">
+      <div class="card-body" id="droppable-Revenue" ondragover="dragover_handler(event)"
+        ondrop="drop_handler(event, this)">
+        <div class="text-center">
+          <h3>Revenue</h3>
+          <a href="{% url 'accountchart_create' %}?accountType=Revenue"><button
+              class="btn btn-success btn-sm">Create</button></a>
+          <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
         </div>
-        {% endfor %}
-      </ul>
+        <hr>
+        <ul class="ledger-ul">
+          {% for revenue in revenues %}
+          <div draggable="true" id="{{revenue.pk}}" ondragstart="drag(event)">
+            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{revenue.pk}}>
+              {{revenue}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{revenue}}"
+                class="bi bi-plus fa-lg"></a>
+            </li>
+            <ul>
+              {% for subledger in revenue.accountsubledger_set.all %}
+              <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
+                title="{{subledger.total_value}}">{{subledger}}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+
+        </ul>
+      </div>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
-    <div class="card-body" id="droppable-Revenue" ondragover="dragover_handler(event)"
-      ondrop="drop_handler(event, this)">
-      <div class="text-center">
-        <h3>Revenue</h3>
-        <a href="{% url 'accountchart_create' %}?accountType=Revenue"><button
-            class="btn btn-success btn-sm">Create</button></a>
-        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
-      </div>
-      <hr>
-      <ul class="ledger-ul">
-        {% for revenue in revenues %}
-        <div draggable="true" id="{{revenue.pk}}" ondragstart="drag(event)">
-          <li class="fw-bolder">{{revenue}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{revenue}}"
-              class="bi bi-plus fa-lg"></a>
-          </li>
-          <ul>
-            {% for subledger in revenue.accountsubledger_set.all %}
-            <li>{{subledger}}</li>
-            {% endfor %}
-          </ul>
-        </div>
-        {% endfor %}
 
-      </ul>
+  <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 d-flex">
+    <div class="card w-100">
+      <div class="card-body" id="droppable-Expense" ondragover="dragover_handler(event)"
+        ondrop="drop_handler(event, this)">
+        <div class="text-center">
+          <h3>Expense</h3>
+          <a href="{% url 'accountchart_create' %}?accountType=Expense"><button
+              class="btn btn-success btn-sm">Create</button></a>
+          <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+        </div>
+        <hr>
+
+        <ul class="ledger-ul">
+          {% for expense in expenses %}
+          <div draggable="true" id="{{expense.pk}}" ondragstart="drag(event)">
+            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{expense.pk}}>
+              {{expense}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{expense}}"
+                class="bi bi-plus fa-lg"></a>
+            </li>
+            <ul>
+              {% for subledger in expense.accountsubledger_set.all %}
+              <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
+                title="{{subledger.total_value}}">{{subledger}}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+        </ul>
+
+      </div>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
-    <div class="card-body" id="droppable-Expense" ondragover="dragover_handler(event)"
-      ondrop="drop_handler(event, this)">
-      <div class="text-center">
-        <h3>Expense</h3>
-        <a href="{% url 'accountchart_create' %}?accountType=Expense"><button
-            class="btn btn-success btn-sm">Create</button></a>
-        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
-      </div>
-      <hr>
-
-      <ul class="ledger-ul">
-        {% for expense in expenses %}
-        <div draggable="true" id="{{expense.pk}}" ondragstart="drag(event)">
-          <li class="fw-bolder">{{expense}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{expense}}"
-              class="bi bi-plus fa-lg"></a>
-          </li>
-          <ul>
-            {% for subledger in expense.accountsubledger_set.all %}
-            <li>{{subledger}}</li>
-            {% endfor %}
-          </ul>
+  <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 d-flex">
+    <div class="card w-100">
+      <div class="card-body" id="droppable-Other" ondragover="dragover_handler(event)"
+        ondrop="drop_handler(event, this)">
+        <div class="text-center">
+          <h3>Other</h3>
+          <a href="{% url 'accountchart_create' %}?accountType=Other"><button
+              class="btn btn-success btn-sm">Create</button></a>
+          <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
         </div>
-        {% endfor %}
-      </ul>
-
+        <hr>
+        <ul class="ledger-ul">
+          {% for other in others %}
+          <div draggable="true" id="{{other.pk}}" ondragstart="drag(event)">
+            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{other.pk}}>
+              {{other}}
+              <a href="{% url 'accountsubledger_create' %}?ledgerType={{other}}" class="bi bi-plus fa-lg"></a>
+            </li>
+            <ul>
+              {% for subledger in other.accountsubledger_set.all %}
+              <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
+                title="{{subledger.total_value}}">{{subledger}}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
   </div>
 
-  <div class="card col-xs-12 col-sm-6 col-md-3 col-lg-3">
-    <div class="card-body" id="droppable-Other" ondragover="dragover_handler(event)" ondrop="drop_handler(event, this)">
-      <div class="text-center">
-        <h3>Other</h3>
-        <a href="{% url 'accountchart_create' %}?accountType=Other"><button
-            class="btn btn-success btn-sm">Create</button></a>
-        <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
-      </div>
-      <hr>
-      <ul class="ledger-ul">
-        {% for other in others %}
-        <div draggable="true" id="{{other.pk}}" ondragstart="drag(event)">
-          <li class="fw-bolder">{{other}} <a href="{% url 'accountsubledger_create' %}?ledgerType={{other}}" class="bi bi-plus fa-lg"></a>
-          </li>
-          <ul>
-            {% for subledger in other.accountsubledger_set.all %}
-            <li>{{subledger}}</li>
-            {% endfor %}
-          </ul>
-        </div>
-        {% endfor %}
-      </ul>
-    </div>
-  </div>
-</div>
+
+  <script>
+
+    function showDetails(type) {
+      Swal.fire({
+        title: '<strong>Details</strong>',
+        html:
+          `
+        
+        
+        `,
+        showCloseButton: true,
+
+      })
+    }
 
 
-<script>
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
 
-  function drag(ev) {
-    ev.dataTransfer.setData("text", ev.target.id);
-  }
+    function dragover_handler(ev) {
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = "move";
+    }
 
-  function dragover_handler(ev) {
-    ev.preventDefault();
-    ev.dataTransfer.dropEffect = "move";
-  }
+    function drop_handler(ev, el) {
+      ev.preventDefault();
+      console.log(ev)
+      const data = ev.dataTransfer.getData("text/plain");
+      let uls = el.getElementsByTagName('ul')
+      let ul = uls[0]
+      ul.appendChild(document.getElementById(data));
+      const accountType = el.id.split('-')[1]
 
-  function drop_handler(ev, el) {
-    ev.preventDefault();
-    const data = ev.dataTransfer.getData("text/plain");
-    let uls = el.getElementsByTagName('ul')
-    let ul = uls[0]
-    ul.appendChild(document.getElementById(data));
-    const accountType = el.id.split('-')[1]
+      $.ajaxSetup({
+        headers: { "X-CSRFToken": '{{csrf_token}}' }
+      });
 
-    $.ajaxSetup({
-      headers: { "X-CSRFToken": '{{csrf_token}}' }
-    });
+      $.ajax({
+        url: `/api/update-account-type/${data}/?accountType=${accountType}`,
+        type: 'PUT',
+        success: function (result) {
+          Swal.fire('Updated!!')
+        }
+      });
+      location.reload()
+    }
 
-    $.ajax({
-      url: `/api/update-account-type/${data}/?accountType=${accountType}`,
-      type: 'PUT',
-      success: function (result) {
-        Swal.fire('Account Head Updated!!')
-      }
-    });
-  }
 
-</script>
+    function handleDblClick(e) {
+      e.setAttribute('contenteditable', true)
+    }
 
-{% endblock %}
+    function subLedgerUpdate(e) {
+      e.setAttribute('contenteditable', false)
+      const value = e.innerText
+      const id = parseInt(e.id)
+
+      Swal.fire({
+        title: 'Are you sure?',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Update',
+        denyButtonText: `Don't save`,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajaxSetup({
+            headers: { "X-CSRFToken": '{{csrf_token}}' }
+          });
+
+          $.ajax({
+            url: `/api/update-account-sub-ledger/${id}/`,
+            type: 'PUT',
+            data: {
+              content: value.trim()
+            },
+            success: function (result) {
+              Swal.fire('Updated', '', 'success')
+            }
+          });
+        }
+      })
+
+
+    }
+
+
+    function ledgerUpdate(e) {
+      e.setAttribute('contenteditable', false)
+      const id = parseInt(e.id)
+      const value = e.innerText
+
+      Swal.fire({
+        title: 'Do you want to save the changes?',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Update',
+        denyButtonText: `Don't save`,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajaxSetup({
+            headers: { "X-CSRFToken": '{{csrf_token}}' }
+          });
+
+          $.ajax({
+            url: `/api/update-account-ledger/${id}/`,
+            type: 'PUT',
+            data: {
+              content: value.trim()
+            },
+            success: function (result) {
+              Swal.fire(
+                'Updated',
+                '',
+                'success'
+              )
+            }
+          });
+        }
+      })
+
+    }
+
+
+
+  </script>
+
+  {% endblock %}

@@ -53,3 +53,22 @@ class TblDrJournalEntry(AccountBaseModel):
     def __str__(self):
         return f'{self.sub_ledger} -> {self.debit_amount}'
 
+
+class StandardLedgerHead(AccountBaseModel):
+    fixed_assets = models.ForeignKey(AccountSubLedger, verbose_name='Fixed Assets', related_name='fixed_assets', on_delete=models.SET_NULL, null=True, blank=True)
+    purchase_accounts = models.ForeignKey(AccountSubLedger, verbose_name='Purchase Accounts', related_name='purchase_accounts', on_delete=models.SET_NULL, null=True, blank=True)
+    sales_accounts = models.ForeignKey(AccountSubLedger, verbose_name='Sales Account', related_name='sales_accounts', on_delete=models.SET_NULL, null=True, blank=True)
+    loans = models.ForeignKey(AccountSubLedger, verbose_name='Loans', related_name='loans', on_delete=models.SET_NULL, null=True, blank=True)
+    direct_income = models.ForeignKey(AccountSubLedger, verbose_name='Direct Income', related_name='direct_income', on_delete=models.SET_NULL, null=True, blank=True)
+    direct_expenses = models.ForeignKey(AccountSubLedger, verbose_name='Direct Expenses', related_name='direct_expenses', on_delete=models.SET_NULL, null=True, blank=True)
+    indirect_income = models.ForeignKey(AccountSubLedger, verbose_name='Indirect Income', related_name='indirect_income', on_delete=models.SET_NULL, null=True, blank=True)
+    indirect_expenses = models.ForeignKey(AccountSubLedger, verbose_name='Indirect Expenses', related_name='indirect_expenses', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return 'Standard Ledger Head'
+
+
+
+
+
+

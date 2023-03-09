@@ -19,7 +19,7 @@ path('accountsubledger/delete', AccountSubLedgerDelete.as_view(), name='accounts
 ]
 
 
-from .views import JournalEntryCreateView, JournalEntryView,  TrialBalanceView, ProfitAndLoss, BalanceSheet
+from .views import JournalEntryCreateView, JournalEntryView,  TrialBalanceView, ProfitAndLoss, BalanceSheet, LedgerStandardView
 urlpatterns += [
     path('journal/', JournalEntryView.as_view(), name="journal_list"),
     path('journal/<int:pk>/', JournalEntryView.as_view(), name="journal_detail"),
@@ -27,5 +27,6 @@ urlpatterns += [
     path('trial-balance/', TrialBalanceView.as_view(), name="trial_balance_view"),
     path('pl/', ProfitAndLoss.as_view(), name="pl_view"),
     path('balance-sheet/', BalanceSheet.as_view(), name="balance_sheet_view"),
+    path('standard/', LedgerStandardView.as_view(), name="standard")
 
 ]
