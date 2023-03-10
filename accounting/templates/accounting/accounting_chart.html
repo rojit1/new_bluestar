@@ -39,7 +39,7 @@
           <h3>Asset</h3>
           <a href="{% url 'accountchart_create' %}?accountType=Asset"><button
               class="btn btn-success btn-sm">Create</button></a>
-          <button type="button" class="btn btn-info btn-sm" onclick="showDetails('assets')">Details</button>
+          <button type="button" class="btn btn-info btn-sm" onclick="showDetails('droppable-Asset')">Details</button>
         </div>
         <hr>
         <ul class="ledger-ul">
@@ -53,6 +53,7 @@
               <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
                 title="{{subledger.total_value}}">
                 {{subledger}}</li>
+                <small class="fw-bolder d-none"><u>{{subledger.total_value}}</u></small>
               {% endfor %}
             </ul>
           </div>
@@ -71,7 +72,7 @@
           <h3>Liability</h3>
           <a href="{% url 'accountchart_create' %}?accountType=Liability"><button
               class="btn btn-success btn-sm">Create</button></a>
-          <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+          <button class="btn btn-info btn-sm"  onclick="showDetails('droppable-Liability')">Details</button>
         </div>
         <hr>
         <ul class="ledger-ul">
@@ -84,6 +85,7 @@
               {% for subledger in liability.accountsubledger_set.all %}
               <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
                 title="{{subledger.total_value}}">{{subledger}}</li>
+                <small class="fw-bolder d-none"><u>{{subledger.total_value}}</u></small>
               {% endfor %}
             </ul>
           </div>
@@ -100,7 +102,7 @@
           <h3>Equity</h3>
           <a href="{% url 'accountchart_create' %}?accountType=Equity"><button
               class="btn btn-success btn-sm">Create</button></a>
-          <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+          <button class="btn btn-info btn-sm" onclick="showDetails('droppable-Equity')">Details</button>
         </div>
         <hr>
         <ul class="ledger-ul">
@@ -114,6 +116,7 @@
               {% for subledger in equity.accountsubledger_set.all %}
               <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
                 title="{{subledger.total_value}}">{{subledger}}</li>
+                <small class="fw-bolder d-none"><u>{{subledger.total_value}}</u></small>
               {% endfor %}
             </ul>
           </div>
@@ -131,7 +134,7 @@
           <h3>Revenue</h3>
           <a href="{% url 'accountchart_create' %}?accountType=Revenue"><button
               class="btn btn-success btn-sm">Create</button></a>
-          <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+          <button class="btn btn-info btn-sm"  onclick="showDetails('droppable-Revenue')">Details</button>
         </div>
         <hr>
         <ul class="ledger-ul">
@@ -145,6 +148,7 @@
               {% for subledger in revenue.accountsubledger_set.all %}
               <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
                 title="{{subledger.total_value}}">{{subledger}}</li>
+                <small class="fw-bolder d-none"><u>{{subledger.total_value}}</u></small>
               {% endfor %}
             </ul>
           </div>
@@ -164,7 +168,7 @@
           <h3>Expense</h3>
           <a href="{% url 'accountchart_create' %}?accountType=Expense"><button
               class="btn btn-success btn-sm">Create</button></a>
-          <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+          <button class="btn btn-info btn-sm" onclick="showDetails('droppable-Expense')">Details</button>
         </div>
         <hr>
 
@@ -179,6 +183,7 @@
               {% for subledger in expense.accountsubledger_set.all %}
               <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
                 title="{{subledger.total_value}}">{{subledger}}</li>
+                <small class="fw-bolder d-none"><u>{{subledger.total_value}}</u></small>
               {% endfor %}
             </ul>
           </div>
@@ -197,7 +202,7 @@
           <h3>Other</h3>
           <a href="{% url 'accountchart_create' %}?accountType=Other"><button
               class="btn btn-success btn-sm">Create</button></a>
-          <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#exampleModal">Details</button>
+          <button class="btn btn-info btn-sm" onclick="showDetails('droppable-Other')">Details</button>
         </div>
         <hr>
         <ul class="ledger-ul">
@@ -211,6 +216,7 @@
               {% for subledger in other.accountsubledger_set.all %}
               <li ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{subledger.pk}}
                 title="{{subledger.total_value}}">{{subledger}}</li>
+                <small class="fw-bolder d-none"><u>{{subledger.total_value}}</u></small>
               {% endfor %}
             </ul>
           </div>
@@ -223,17 +229,18 @@
 
   <script>
 
-    function showDetails(type) {
-      Swal.fire({
-        title: '<strong>Details</strong>',
-        html:
-          `
-        
-        
-        `,
-        showCloseButton: true,
-
-      })
+    function showDetails(cardId) {
+      let card = document.getElementById(cardId)
+      let items = card.getElementsByTagName('small')
+      for(let item of items){
+        if(item.classList.contains('d-none')){
+          item.classList.remove('d-none')
+          item.classList.add('d-block')
+        }else{
+          item.classList.remove('d-block')
+          item.classList.add('d-none')
+        }
+      }
     }
 
 
