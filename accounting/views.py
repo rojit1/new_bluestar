@@ -250,16 +250,16 @@ class BalanceSheet(TemplateView):
                                     .aggregate(Sum('total_value')).get('total_value__sum')
         
 
+        if asset_total and liability_total:
+            if asset_total > liability_total:
+                context['lib_retained_earnings'] =  asset_total-liability_total
+                context['liability_total'] = liability_total + asset_total-liability_total
+                context['asset_total'] = asset_total
 
-        if asset_total > liability_total:
-            context['lib_retained_earnings'] =  asset_total-liability_total
-            context['liability_total'] = liability_total + asset_total-liability_total
-            context['asset_total'] = asset_total
-
-        else:
-            context['asset_retained_earnings'] =  liability_total-asset_total
-            context['asset_total'] = asset_total + liability_total-asset_total
-            context['liability_total'] = liability_total
+            else:
+                context['asset_retained_earnings'] =  liability_total-asset_total
+                context['asset_total'] = asset_total + liability_total-asset_total
+                context['liability_total'] = liability_total
             
 
         context['assets'] = asset_dict
@@ -267,6 +267,3 @@ class BalanceSheet(TemplateView):
 
         return context
     
-
-class LedgerStandardView(TemplateView):
-    template_name = "accounting/standard.html"

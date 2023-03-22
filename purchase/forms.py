@@ -95,13 +95,9 @@ class AssetPurchaseForm(BaseForm, forms.ModelForm):
     vendor = forms.ModelChoiceField(
         queryset=Vendor.objects.all()
     )
-    sub_ledger = forms.ModelChoiceField(
-        AccountSubLedger.objects.filter(account_chart=AccountChart.objects.filter(ledger__icontains='f').first())
-        )
-
 
     field_order = [ 'bill_no', 'bill_date', 'pp_no', 'vendor', 'assets', 'sub_total', 'discount_percentage', 'discount_amount', 'taxable_amount',
-                'non_taxable_amount', 'tax_amount', 'grand_total', 'amount_in_words', 'payment_mode', 'sub_ledger']
+                'non_taxable_amount', 'tax_amount', 'grand_total', 'amount_in_words', 'payment_mode']
 
 
     def __init__(self, *args, **kwargs):

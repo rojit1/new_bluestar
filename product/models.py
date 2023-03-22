@@ -66,16 +66,13 @@ post_save.connect(create_stock, sender=Product)
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
 class ProductMultiprice(models.Model):
-    product_id = models.BigIntegerField()
-    product_price = models.CharField(max_length=15)
-    
-    class Meta:
-        managed = False
-        db_table = 'product_multiprice'
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_price = models.FloatField()
     
     def __str__(self):
-        return f"{self.product_id}- {self.product_price}"
+        return f"{self.product} - {self.product_price}"
 
 
 

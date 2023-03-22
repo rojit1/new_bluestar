@@ -26,11 +26,11 @@
                     data-kt-check-target="#kt_customers_table .form-check-input" value="1">
                 </div>
               </th>
-              <th class="min-w-125px sorting" tabindex="0" > Header Name</th>
-              <th class="min-w-125px sorting" tabindex="0" > Header Name</th>
-              <th class="min-w-125px sorting" tabindex="0" > Header Name</th>
+              <th class="min-w-125px sorting" tabindex="0" > Bill Date</th>
+              <th class="min-w-125px sorting" tabindex="0" > Sub Total</th>
+              <th class="min-w-125px sorting" tabindex="0" > Grand Total</th>
               <th class="min-w-125px sorting" tabindex="0" > Status</th>
-              <th class="min-w-125px sorting" tabindex="0" > Header Name</th>
+              <th class="min-w-125px sorting" tabindex="0" > Payment Mode</th>
 
               <th class="text-end min-w-70px sorting_disabled" rowspan="1" colspan="1" aria-label="Actions"
                 style="width: 125.287px;">Actions</th>
@@ -48,11 +48,11 @@
                     </div>
                 </td>
 
-                <td>value 1</td>
-                <td>value 2</td>
-                <td>value 3</td>
+                <td>{{object.bill_date}}</td>
+                <td>{{object.sub_total}}</td>
+                <td>{{object.grand_total}}</td>
                 <td>{% include 'components/status.html' with status=object.status%}</td>
-                <td>value 4</td>
+                <td>{{object.payment_mode}}</td>
                 <td class="text-end">
                 <a href="#" class="btn btn-sm btn-light btn-active-light-primary" data-kt-menu-trigger="click"
                                 data-kt-menu-placement="bottom-end">Actions

@@ -3,18 +3,13 @@ from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
 
 
-from product.models import CustomerProduct, Product, ProductCategory,ProductMultiprice
+from product.models import CustomerProduct, Product, ProductCategory
 
 
 class ProductCategorySerializer(ModelSerializer):
     class Meta:
         model = ProductCategory
         fields = ["id", "title", "slug", "description"]
-
-class ProductMultipriceSerializer(ModelSerializer):
-    class Meta:
-        model = ProductMultiprice
-
 
 
 

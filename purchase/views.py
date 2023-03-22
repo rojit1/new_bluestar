@@ -318,7 +318,6 @@ class AssetPurchaseCreate(CreateView):
         grand_total = request.POST.get('grand_total')
         amount_in_words = request.POST.get('amount_in_words')
         payment_mode = request.POST.get('payment_mode')
-        debit_sub_ledger_pk = request.POST.get('sub_ledger')
 
         asset_purchase = AssetPurchase(
             bill_no=bill_no,
@@ -350,20 +349,6 @@ class AssetPurchaseCreate(CreateView):
                 item_total = rate * quantity
                 AssetPurchaseItem.objects.create(asset=asset, asset_purchase=asset_purchase, rate=rate, quantity=quantity, item_total=item_total)
 
-        # if payment_mode == 'Cash':
-
-        #     try:
-        #         credit_sub_ledger = AccountSubLedger.objects.get(sub_ledger_name=payment_mode)
-        #         debit_sub_ledger = AccountSubLedger.objects.get(pk=debit_sub_ledger_pk)
-
-        #         journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username)
-
-        #         TblDrJournalEntry.objects.create(sub_ledger=debit_sub_ledger, journal_entry=journal_entry, particulars=f'Debit from bill {bill_no}', debit_amount=grand_total)
-        #         credit_sub_ledger.total_value -= grand_total
-        #         TblCrJournalEntry.objects.create(sub_ledger=credit_sub_ledger, journal_entry=journal_entry,particulars=f'Cash cr. from bill {bill_no}', credit_amount=grand_total)
-        #         debit_sub_ledger.total_value += grand_total
-        #     except Exception:
-        #         print(Exception)
 
         return redirect('/')
     
