@@ -6,7 +6,7 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 class AccountChartForm(BaseForm, forms.ModelForm):
     class Meta:
         model = AccountChart
-        fields = '__all__'
+        exclude = 'is_editable',
 
 
 from .models import AccountSubLedger
@@ -14,7 +14,7 @@ from .models import AccountSubLedger
 class AccountSubLedgerForm(BaseForm, forms.ModelForm):
     class Meta:
         model = AccountSubLedger
-        fields = '__all__'
+        exclude = 'is_editable',
 
 
 class DrJournalEntryForm(BaseForm, forms.ModelForm):

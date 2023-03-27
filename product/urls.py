@@ -11,13 +11,15 @@ path('prdct/category/<int:pk>/update/', ProductCategoryUpdate.as_view(), name='p
 path('prdct/category/delete', ProductCategoryDelete.as_view(), name='product_category_delete'),
 ]
                
-from .views import ProductList,ProductDetail,ProductCreate,ProductUpdate,ProductDelete
+from .views import ProductList,ProductDetail,ProductCreate,ProductUpdate,ProductDelete, ProductUpload
 urlpatterns += [
 path('product/', ProductList.as_view(), name='product_list'),
 path('product/<int:pk>/', ProductDetail.as_view(), name='product_detail'),
 path('product/create/', ProductCreate.as_view(), name='product_create'),
 path('product/<int:pk>/update/', ProductUpdate.as_view(), name='product_update'),
 path('product/delete', ProductDelete.as_view(), name='product_delete'),
+path('product/upload/', ProductUpload.as_view(), name='product_upload'),
+
 ]
                
 from .views import CustomerProductList,CustomerProductDetail,CustomerProductCreate,CustomerProductUpdate,CustomerProductDelete

@@ -12,6 +12,8 @@ class AccountChart(AccountBaseModel):
     account_type = models.CharField(max_length=100)
     ledger = models.CharField(max_length=100, unique=True)
     financial_statement = models.CharField(max_length=30, null=True, blank=True)
+    is_editable = models.BooleanField(default=True)
+
 
     def __str__(self):
         return self.ledger
@@ -22,6 +24,7 @@ class AccountSubLedger(AccountBaseModel):
     sub_ledger_name = models.CharField(max_length=200, unique=True)
     total_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     affects_cash_flow = models.CharField(max_length=20)
+    is_editable = models.BooleanField(default=True)
 
     def __str__(self):
         return self.sub_ledger_name

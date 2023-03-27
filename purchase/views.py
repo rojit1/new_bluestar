@@ -13,7 +13,7 @@ from organization.models import Organization
 from product.models import ProductStock
 from .forms import VendorForm, ProductPurchaseForm
 from .models import Vendor, ProductPurchase, Purchase, TblpurchaseEntry, TblpurchaseReturn
-
+import decimal
 from bill.views import ExportExcelMixin
 
 class VendorMixin:
@@ -277,7 +277,7 @@ class PurchaseBookListView(ExportExcelMixin,View):
 
 from .models import AssetPurchase, Asset, AssetPurchaseItem
 from .forms import AssetPurchaseForm
-from accounting.models import TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountSubLedger
+from accounting.models import TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountSubLedger, AccountChart
 
 class AssetPurchaseMixin:
     model = AssetPurchase
@@ -318,10 +318,22 @@ class AssetPurchaseCreate(CreateView):
         grand_total = request.POST.get('grand_total')
         amount_in_words = request.POST.get('amount_in_words')
         payment_mode = request.POST.get('payment_mode')
+        debit_account = request.POST.get('debit_account', None)
 
+        vendor=None
+        try:
+            v_id = int(vendor_id)
+            vendor = Vendor.objects.get(pk=v_id)
+        except Exception as e:
+            vendor = Vendor.objects.create(name=vendor_id)
+        # import pdb
+        # pdb.set_trace()
+
+        # return redirect('/')
+        
         asset_purchase = AssetPurchase(
             bill_no=bill_no,
-            vendor_id=vendor_id,sub_total=sub_total, bill_date=bill_date,
+            vendor=vendor,sub_total=sub_total, bill_date=bill_date,
             discount_percentage=discount_percentage,discount_amount=discount_amount,
             taxable_amount=taxable_amount, non_taxable_amount=non_taxable_amount,
             tax_amount=tax_amount, grand_total=grand_total,
@@ -337,20 +349,79 @@ class AssetPurchaseCreate(CreateView):
         for item in selected_item_list:
             if not Asset.objects.filter(title=item).exists():
                 asset = Asset.objects.create(title=item)
-                quantity = int(request.POST.get(f'id_bill_item_quantity_{item}'))
-                rate = float(request.POST.get(f'id_bill_item_rate_{item}'))
-                item_total = rate * quantity
-                AssetPurchaseItem.objects.create(asset=asset, asset_purchase=asset_purchase, rate=rate, quantity=quantity, item_total=item_total)
-
             else:
                 asset = Asset.objects.get(title=item)
-                quantity = int(request.POST.get(f'id_bill_item_quantity_{item}'))
-                rate = float(request.POST.get(f'id_bill_item_rate_{item}'))
-                item_total = rate * quantity
-                AssetPurchaseItem.objects.create(asset=asset, asset_purchase=asset_purchase, rate=rate, quantity=quantity, item_total=item_total)
+
+            quantity = int(request.POST.get(f'id_bill_item_quantity_{item}'))
+            rate = float(request.POST.get(f'id_bill_item_rate_{item}'))
+            item_total = rate * quantity
+            AssetPurchaseItem.objects.create(asset=asset, asset_purchase=asset_purchase, rate=rate, quantity=quantity, item_total=item_total)
+
+        if payment_mode != 'Credit':
+            if debit_account:
+                try:
+                    credit_sub_ledger = AccountSubLedger.objects.get(sub_ledger_name='Cash-In-Hand')
+                    debit_sub_ledger = AccountSubLedger.objects.get(pk=int(debit_account))
+                    journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username)
+
+                    grand_total = decimal.Decimal(grand_total)
+                    tax_amt = decimal.Decimal(tax_amount)
+
+                    total_debit_amt = grand_total - tax_amt
+                    
+                    if tax_amt > 0:
+                        vat_receivable =  AccountSubLedger.objects.get(sub_ledger_name='VAT Receivable')
+                        vat_receivable.total_value += tax_amt
+                        vat_receivable.save()
+                        TblDrJournalEntry.objects.create(sub_ledger=vat_receivable, journal_entry=journal_entry, particulars=f'Vat receivable from {bill_no}', debit_amount=tax_amt)
 
 
-        return redirect('/')
+                    TblDrJournalEntry.objects.create(sub_ledger=debit_sub_ledger, journal_entry=journal_entry, particulars=f'Debit from bill {bill_no}', debit_amount=total_debit_amt)
+                    debit_sub_ledger.total_value += total_debit_amt
+                    debit_sub_ledger.save()
+                    TblCrJournalEntry.objects.create(sub_ledger=credit_sub_ledger, journal_entry=journal_entry,particulars=f'Cash cr. from bill {bill_no}', credit_amount=grand_total)
+                    credit_sub_ledger.total_value -= grand_total
+                    credit_sub_ledger.save()
+                except Exception as e:
+                    print(e)
+        else:
+            if debit_account:
+                vendor_name = vendor.name
+                try:
+                    credit_sub_ledger = None
+                    if not AccountSubLedger.objects.filter(sub_ledger_name=vendor_name).exists():
+                        account_chart = AccountChart.objects.get(ledger='Accounts Payable')
+                        credit_sub_ledger = AccountSubLedger(sub_ledger_name=vendor_name, affects_cash_flow="dummy text", account_chart=account_chart)
+                        credit_sub_ledger.save()
+                        
+                    credit_sub_ledger = AccountSubLedger.objects.get(sub_ledger_name=vendor_name)
+                    debit_sub_ledger = AccountSubLedger.objects.get(pk=int(debit_account))
+                    journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username)
+
+                    grand_total = decimal.Decimal(grand_total)
+                    tax_amt = decimal.Decimal(tax_amount)
+
+                    total_debit_amt = grand_total - tax_amt
+                    
+                    if tax_amt > 0:
+                        vat_receivable =  AccountSubLedger.objects.get(sub_ledger_name='VAT Receivable')
+                        vat_receivable.total_value += tax_amt
+                        vat_receivable.save()
+                        TblDrJournalEntry.objects.create(sub_ledger=vat_receivable, journal_entry=journal_entry, particulars=f'Vat receivable from {bill_no}', debit_amount=tax_amt)
+
+
+                    TblDrJournalEntry.objects.create(sub_ledger=debit_sub_ledger, journal_entry=journal_entry, particulars=f'Debit from bill {bill_no}', debit_amount=total_debit_amt)
+                    debit_sub_ledger.total_value += total_debit_amt
+                    debit_sub_ledger.save()
+                    TblCrJournalEntry.objects.create(sub_ledger=credit_sub_ledger, journal_entry=journal_entry,particulars=f'Cash cr. from bill {bill_no}', credit_amount=grand_total)
+                    credit_sub_ledger.total_value += grand_total
+                    credit_sub_ledger.save()
+                except Exception as e:
+                    print(e)
+
+
+
+        return redirect('/asset/')
     
 
 

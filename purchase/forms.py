@@ -95,9 +95,11 @@ class AssetPurchaseForm(BaseForm, forms.ModelForm):
     vendor = forms.ModelChoiceField(
         queryset=Vendor.objects.all()
     )
+    # debit_account =  forms.ModelChoiceField( queryset=AccountSubLedger.objects.filter(account_chart=AccountChart.objects.filter(ledger="Fixed Assets").first()))
+    
 
     field_order = [ 'bill_no', 'bill_date', 'pp_no', 'vendor', 'assets', 'sub_total', 'discount_percentage', 'discount_amount', 'taxable_amount',
-                'non_taxable_amount', 'tax_amount', 'grand_total', 'amount_in_words', 'payment_mode']
+                'non_taxable_amount', 'tax_amount', 'grand_total', 'amount_in_words', 'payment_mode', "debit_acocunt"]
 
 
     def __init__(self, *args, **kwargs):
@@ -110,16 +112,12 @@ class AssetPurchaseForm(BaseForm, forms.ModelForm):
         self.fields["tax_amount"].label = "VAT Amount"
         self.fields["discount_amount"].widget.attrs["readonly"] = True
         self.fields["amount_in_words"].widget.attrs["readonly"] = True
-        # self.fields["assets"].widget.attrs = {
-        #     "class": "form-select",
-        #     "data-control": "select2",
-        #     "data-placeholder": "Select Asset",
-        # }
-
-        self.fields["vendor"].widget.attrs = {
-            "class": "form-select",
+        self.fields["debit_account"] = forms.ModelChoiceField( queryset=AccountSubLedger.objects.filter(account_chart=AccountChart.objects.filter(ledger="Fixed Assets").first()))
+        self.fields["debit_account"].widget.attrs = {
+            "tags":"true",
+            "class":"form-select",
             "data-control": "select2",
-            "data-placeholder": "Select Vendor",
+            "data-placeholder": "Select Account",
         }
 
     class Meta:

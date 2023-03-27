@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 
 from django.urls import reverse_lazy
@@ -178,3 +178,13 @@ class ProductStockUpdate(ProductStockMixin, UpdateView):
 
 class ProductStockDelete(ProductStockMixin, DeleteMixin, View):
     pass
+
+
+from openpyxl import load_workbook
+
+class ProductUpload(View):
+
+
+    def post(self, request):
+        file = request.FILES['file']
+        return redirect(reverse_lazy('product_list'))

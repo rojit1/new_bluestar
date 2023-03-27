@@ -134,7 +134,7 @@ class JournalEntryCreateView(View):
 
 
         return redirect('journal_list')
-        return render(request, 'accounting/journal_entry_create.html', {'form':form})
+
 
 
 class JournalEntryView(View):
@@ -142,11 +142,20 @@ class JournalEntryView(View):
     def get(self, request, pk=None):
         if pk:
             journal = TblJournalEntry.objects.get(pk=pk)
-            credit_details = TblCrJournalEntry.objects.get(journal_entry=journal)
-            debit_details = TblDrJournalEntry.objects.get(journal_entry=journal)
+            credit_details = TblCrJournalEntry.objects.filter(journal_entry=journal)
+            debit_details = TblDrJournalEntry.objects.filter(journal_entry=journal)
+            debit_total, credit_total = 0, 0
+            for dr in debit_details:
+                debit_total += dr.debit_amount
+
+            for cr in credit_details:
+                credit_total += cr.credit_amount
+
             context = {
                 'credit': credit_details,
-                'debit': debit_details
+                'debit': debit_details,
+                "dr_total":debit_total,
+                "cr_total": credit_total
             }
             return render(request, 'accounting/journal/journal_voucher.html', context)
             
@@ -159,7 +168,7 @@ class TrialBalanceView(View):
     def get(self, request):
         trial_balance = []
         total = {'debit_total':0, 'credit_total':0}
-        subledgers = AccountSubLedger.objects.all()
+        subledgers = AccountSubLedger.objects.filter(total_value__gt=0)
         for subled in subledgers:
             data = {}
             data['account']=subled.sub_ledger_name

@@ -91,6 +91,24 @@
 
 
 {% block footer_js %}
+
+<script>
+  $('#id_assets').select2({
+    tags: true,
+    placeholder: 'Select or Create Asset'
+  })
+
+  $('#id_vendor').select2({
+    tags: true,
+    placeholder: 'Select or Create Vendor'
+  })
+  // $('#id_debit_account').select2({
+  //   tags: true,
+  //   placeholder: 'Select or Create Account'
+  // })
+</script>
+
+
 <script src="{% static 'js/num2words.js' %}"></script>
 <script type="text/javascript">
 
@@ -304,16 +322,7 @@ $(document).ready(function() {
 
 </script>
 
-<script>
-  $('#id_assets').select2({
-  tags: true,
-  placeholder: 'Select or Create Asset'
-})
 
-
-
-
-</script>
 
 
 {% endblock %}
