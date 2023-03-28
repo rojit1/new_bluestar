@@ -9,12 +9,12 @@ class AccountChartForm(BaseForm, forms.ModelForm):
         exclude = 'is_editable',
 
 
-from .models import AccountSubLedger
+from .models import AccountLedger
 
-class AccountSubLedgerForm(BaseForm, forms.ModelForm):
+class AccountLedgerForm(BaseForm, forms.ModelForm):
     class Meta:
-        model = AccountSubLedger
-        exclude = 'is_editable',
+        model = AccountLedger
+        exclude = 'is_editable', "total_value"
 
 
 class DrJournalEntryForm(BaseForm, forms.ModelForm):
@@ -31,21 +31,21 @@ class CrJournalEntryForm(BaseForm, forms.ModelForm):
         
 
 class JournalEntryForm(forms.Form):
-    debit_sub_ledger = forms.ModelChoiceField(queryset=AccountSubLedger.objects.all())
+    debit_ledger = forms.ModelChoiceField(queryset=AccountLedger.objects.all())
     debit_particulars = forms.CharField(max_length=255)
     debit_amount = forms.FloatField(initial=0,)
 
-    credit_sub_ledger = forms.ModelChoiceField(queryset=AccountSubLedger.objects.all())
+    credit_ledger = forms.ModelChoiceField(queryset=AccountLedger.objects.all())
     credit_particulars = forms.CharField(max_length=255)
     credit_amount = forms.FloatField(initial=0)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["debit_sub_ledger"].widget.attrs["class"] = 'form-select'
-        self.fields["debit_sub_ledger"].widget.attrs["data-control"] = 'select2'
+        self.fields["debit_ledger"].widget.attrs["class"] = 'form-select'
+        self.fields["debit_ledger"].widget.attrs["data-control"] = 'select2'
 
-        self.fields["credit_sub_ledger"].widget.attrs["class"] = 'form-select'
-        self.fields["credit_sub_ledger"].widget.attrs["data-control"] = 'select2'
+        self.fields["credit_ledger"].widget.attrs["class"] = 'form-select'
+        self.fields["credit_ledger"].widget.attrs["data-control"] = 'select2'
 
 
 

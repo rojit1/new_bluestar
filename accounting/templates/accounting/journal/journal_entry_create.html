@@ -34,10 +34,10 @@
                     id="kt_customers_table">
 
                     <thead>
-                        <th>Sub Ledger</th>
+                        <th>Ledger</th>
                         <th>Particulars</th>
                         <th>L.F</th>
-                        <th>Debit(Rs)</th>
+                        <th>Debit(Rs) <i class="text-success fas fa-plus fa-lg"></i> </th>
                         <th>Credit(Rs)</th>
                     </thead>
                     <tbody class="fw-bold text-gray-600">
@@ -45,7 +45,7 @@
                             {% csrf_token %}
                             <div class="row">
                                 <tr>
-                                    <td>{{form.debit_sub_ledger}}</td>
+                                    <td>{{form.debit_ledger}}</td>
                                     <td class="col-md-5">{{form.debit_particulars}}</td>
                                     <td></td>
                                     <td class="col-md-2">{{form.debit_amount}}</td>
@@ -55,7 +55,7 @@
 
                             <div class="row">
                                 <tr>
-                                    <td>{{form.credit_sub_ledger}}</td>
+                                    <td>{{form.credit_ledger}}</td>
                                     <td class="col-md-5">{{form.credit_particulars}}</td>
                                     <td></td>
                                     <td class="col-md-2">-------</td>
@@ -85,13 +85,28 @@
 
 
 <script>
+
+    function addDebitRow(){
+        const row = `
+            <tr>
+                <td>{{form.debit_ledger}}</td>
+                <td class="col-md-5">{{form.debit_particulars}}</td>
+                <td></td>
+                <td class="col-md-2">{{form.debit_amount}}</td>
+                <td class="col-md-2">------</td>
+            </tr>
+        `
+    }
+
+</script>
+
+
+<script>
     let debit_amount = document.querySelector('#id_debit_amount')
     let credit_amount = document.querySelector('#id_credit_amount')
 
     let total_debit = document.querySelector('#total-debit')
     let total_credit = document.querySelector('#total-credit')
-
-
 
     debit_amount.onkeyup = function(e){
         credit_amount.value = debit_amount.value

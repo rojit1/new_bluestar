@@ -9,13 +9,13 @@ path('accountchart/<int:pk>/update/', AccountChartUpdate.as_view(), name='accoun
 path('accountchart/delete', AccountChartDelete.as_view(), name='accountchart_delete'),
 ]
 
-from .views import AccountSubLedgerList,AccountSubLedgerDetail,AccountSubLedgerCreate,AccountSubLedgerUpdate,AccountSubLedgerDelete
+from .views import AccountLedgerList,AccountLedgerDetail,AccountLedgerCreate,AccountLedgerUpdate,AccountLedgerDelete
 urlpatterns += [
-path('accountsubledger/', AccountChartList.as_view(), name='accountsubledger_list'),
-path('accountsubledger/<int:pk>/', AccountSubLedgerDetail.as_view(), name='accountsubledger_detail'),
-path('accountsubledger/create/', AccountSubLedgerCreate.as_view(), name='accountsubledger_create'),
-path('accountsubledger/<int:pk>/update/', AccountSubLedgerUpdate.as_view(), name='accountsubledger_update'),
-path('accountsubledger/delete', AccountSubLedgerDelete.as_view(), name='accountsubledger_delete'),
+path('accountledger/', AccountChartList.as_view(), name='accountledger_list'),
+path('accountledger/<int:pk>/', AccountLedgerDetail.as_view(), name='accountledger_detail'),
+path('accountledger/create/', AccountLedgerCreate.as_view(), name='accountledger_create'),
+path('accountledger/<int:pk>/update/', AccountLedgerUpdate.as_view(), name='accountledger_update'),
+path('accountledger/delete', AccountLedgerDelete.as_view(), name='accountledger_delete'),
 ]
 
 

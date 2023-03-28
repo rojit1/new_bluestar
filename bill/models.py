@@ -184,41 +184,25 @@ class Bill(BaseModel):
     def __str__(self):
         return f"{self.customer_name}-{self.transaction_date}- {self.grand_total}"
 
+from .utils import create_journal_for_bill
 
 @receiver(post_save, sender=Bill)
 def create_invoice_number(sender, instance, created, **kwargs):
     current_fiscal_year = Organization.objects.last().current_fiscal_year
-    # terminal = "1"
-    # if Bill.objects.all().count() >= 2:
-    #     print("IF LEN 2 : ")
-    #     current_fiscal_year_in_bill = (
-    #         Bill.objects.all().order_by("pk").reverse()[1].fiscal_year
-    #     )
-    #     current_bill_number = (
-    #         Bill.objects.all().order_by("pk").reverse()[1].invoice_number
-    #     )
-    # elif len(Bill.objects.all()) == 1:
-    #     print("IF LEN == 1 : ")
-
-    #     current_fiscal_year_in_bill = current_fiscal_year
-    #     current_bill_number = "PW-0"
-
-    # else:
-    #     print("IF LEN else : ")
-
-    #     current_fiscal_year_in_bill = current_fiscal_year
-    #     current_bill_number = "PW-0"
-    # print(
-    #     "\n\n",
-    #     f"Current Fiscal Year : {current_fiscal_year} \n Current Fiscal Year in Bill : {current_fiscal_year_in_bill} \n Current Bill Number : {current_bill_number}",
-    # )
 
     if created:
+
+        """
+        Accounting Section to create Journals after Bill Create
+        """
+        create_journal_for_bill(instance)
+        # ___________________________________
+
         branch = instance.branch.branch_code
         terminal = instance.terminal
         branch_and_terminal = f"{branch}-{terminal}"
 
-        bill_number = 0
+        bill_number = 0 
         invoice_number = ""
         instance.fiscal_year = current_fiscal_year
         # if current_bill_number == None:

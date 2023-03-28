@@ -44,7 +44,7 @@
                             <div class="row">
                                 {% for dr in debit %}
                                 <tr>
-                                    <td>{{dr.sub_ledger.sub_ledger_name}}</td>
+                                    <td>{{dr.ledger.ledger_name}}</td>
                                     <td class="col-md-5">{{dr.particulars}}</td>
                                     <td></td>
                                     <td class="col-md-2">{{dr.debit_amount}}</td>
@@ -56,7 +56,7 @@
                             <div class="row">
                                 {% for cr in credit %}
                                 <tr>
-                                    <td>{{cr.sub_ledger.sub_ledger_name}}</td>
+                                    <td>{{cr.ledger.ledger_name}}</td>
                                     <td class="col-md-5">{{cr.particulars}}</td>
                                     <td></td>
                                     <td class="col-md-2">-------</td>

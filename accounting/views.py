@@ -13,7 +13,7 @@ class AccountChartMixin:
     model = AccountChart
     form_class = AccountChartForm
     paginate_by = 10
-    queryset = AccountChart.objects.prefetch_related('accountsubledger_set')
+    queryset = AccountChart.objects.prefetch_related('accountledger_set')
     success_url = reverse_lazy('accountchart_list')
 
 
@@ -57,29 +57,29 @@ class AccountChartDelete(AccountChartMixin, DeleteMixin, View):
     pass
 
 
-from .models import AccountSubLedger
-from .forms import AccountSubLedgerForm
-class AccountSubLedgerMixin:
-    model = AccountSubLedger
-    form_class = AccountSubLedgerForm
+from .models import AccountLedger
+from .forms import AccountLedgerForm
+class AccountLedgerMixin:
+    model = AccountLedger
+    form_class = AccountLedgerForm
     paginate_by = 10
-    queryset = AccountSubLedger.objects.all()
-    success_url = reverse_lazy('accountsubledger_list')
+    queryset = AccountLedger.objects.all()
+    success_url = reverse_lazy('accountledger_list')
 
-class AccountSubLedgerList(AccountSubLedgerMixin, ListView):
-    template_name = "accounting/accountsubledger_list.html"
-    queryset = AccountSubLedger.objects.all()
+class AccountLedgerList(AccountLedgerMixin, ListView):
+    template_name = "accounting/accountledger_list.html"
+    queryset = AccountLedger.objects.all()
 
-class AccountSubLedgerDetail(AccountSubLedgerMixin, DetailView):
-    template_name = "accountsubledger/accountsubledger_detail.html"
+class AccountLedgerDetail(AccountLedgerMixin, DetailView):
+    template_name = "accounting/accountledger_detail.html"
 
-class AccountSubLedgerCreate(AccountSubLedgerMixin, CreateView):
+class AccountLedgerCreate(AccountLedgerMixin, CreateView):
     template_name = "accounting/create.html"
 
-class AccountSubLedgerUpdate(AccountSubLedgerMixin, UpdateView):
+class AccountLedgerUpdate(AccountLedgerMixin, UpdateView):
     template_name = "update.html"
 
-class AccountSubLedgerDelete(AccountChartMixin, DeleteMixin, View):
+class AccountLedgerDelete(AccountChartMixin, DeleteMixin, View):
     pass
 
 
@@ -95,41 +95,40 @@ class JournalEntryCreateView(View):
     def post(self, request):
         form = JournalEntryForm(request.POST)
         if form.is_valid():
-
             journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username)
 
-            debit_sub_ledger = request.POST.get('debit_sub_ledger')
+            debit_ledger = request.POST.get('debit_ledger')
             debit_particulars = request.POST.get('debit_particulars')
             debit_amount = D(request.POST.get('debit_amount', 0.0))
-            debit_sub_ledger = AccountSubLedger.objects.get(pk=int(debit_sub_ledger))
-            debit_sub_ledger_type = debit_sub_ledger.account_chart.account_type
+            debit_ledger = AccountLedger.objects.get(pk=int(debit_ledger))
+            debit_ledger_type = debit_ledger.account_chart.account_type
 
 
-            credit_sub_ledger = request.POST.get('credit_sub_ledger')
-            credit_sub_ledger = AccountSubLedger.objects.get(pk=int(credit_sub_ledger))
-            credit_sub_ledger_type = credit_sub_ledger.account_chart.account_type
+            credit_ledger = request.POST.get('credit_ledger')
+            credit_ledger = AccountLedger.objects.get(pk=int(credit_ledger))
+            credit_ledger_type = credit_ledger.account_chart.account_type
             credit_particulars = request.POST.get('credit_particulars')
             credit_amount = D(request.POST.get('credit_amount', 0.0))
 
 
 
-            TblDrJournalEntry.objects.create(sub_ledger=debit_sub_ledger, journal_entry=journal_entry, particulars=debit_particulars, debit_amount=debit_amount)
-            TblCrJournalEntry.objects.create(sub_ledger=credit_sub_ledger, journal_entry=journal_entry,particulars=credit_particulars, credit_amount=credit_amount)
+            TblDrJournalEntry.objects.create(ledger=debit_ledger, journal_entry=journal_entry, particulars=debit_particulars, debit_amount=debit_amount)
+            TblCrJournalEntry.objects.create(ledger=credit_ledger, journal_entry=journal_entry,particulars=credit_particulars, credit_amount=credit_amount)
 
-            if debit_sub_ledger_type in ['Asset', 'Expense']:
-                debit_sub_ledger.total_value =debit_sub_ledger.total_value + debit_amount
-                debit_sub_ledger.save()
-            elif debit_sub_ledger_type in ['Liability', 'Revenue', 'Equity']:
-                debit_sub_ledger.total_value = debit_sub_ledger.total_value - debit_amount
-                debit_sub_ledger.save()
+            if debit_ledger_type in ['Asset', 'Expense']:
+                debit_ledger.total_value =debit_ledger.total_value + debit_amount
+                debit_ledger.save()
+            elif debit_ledger_type in ['Liability', 'Revenue', 'Equity']:
+                debit_ledger.total_value = debit_ledger.total_value - debit_amount
+                debit_ledger.save()
 
-            if credit_sub_ledger_type in ['Asset', 'Expense']:
-                credit_sub_ledger.total_value = credit_sub_ledger.total_value - credit_amount
-                credit_sub_ledger.save()
+            if credit_ledger_type in ['Asset', 'Expense']:
+                credit_ledger.total_value = credit_ledger.total_value - credit_amount
+                credit_ledger.save()
 
-            elif credit_sub_ledger_type in ['Liability', 'Revenue', 'Equity']:
-                credit_sub_ledger.total_value = credit_sub_ledger.total_value + credit_amount
-                credit_sub_ledger.save()
+            elif credit_ledger_type in ['Liability', 'Revenue', 'Equity']:
+                credit_ledger.total_value = credit_ledger.total_value + credit_amount
+                credit_ledger.save()
 
 
 
@@ -168,30 +167,30 @@ class TrialBalanceView(View):
     def get(self, request):
         trial_balance = []
         total = {'debit_total':0, 'credit_total':0}
-        subledgers = AccountSubLedger.objects.filter(total_value__gt=0)
-        for subled in subledgers:
+        ledgers = AccountLedger.objects.filter(total_value__gt=0)
+        for led in ledgers:
             data = {}
-            data['account']=subled.sub_ledger_name
-            account_type = subled.account_chart.account_type
+            data['account']=led.ledger_name
+            account_type = led.account_chart.account_type
             data['account_head']=account_type
 
             if account_type in ['Asset', 'Expense']:
-                if subled.total_value > 0:
-                    data['debit'] = subled.total_value
-                    total['debit_total'] += subled.total_value
+                if led.total_value > 0:
+                    data['debit'] = led.total_value
+                    total['debit_total'] += led.total_value
                     data['credit'] = '-'
                 else:
-                    data['credit'] = subled.total_value
-                    total['credit_total'] += subled.total_value
+                    data['credit'] = led.total_value
+                    total['credit_total'] += led.total_value
                     data['debit'] = '-'
             else:
-                if subled.total_value > 0:
-                    data['credit'] = subled.total_value
-                    total['credit_total'] += subled.total_value
+                if led.total_value > 0:
+                    data['credit'] = led.total_value
+                    total['credit_total'] += led.total_value
                     data['debit'] = '-'
                 else:
-                    data['debit'] = subled.total_value
-                    total['debit_total'] += subled.total_value
+                    data['debit'] = led.total_value
+                    total['debit_total'] += led.total_value
                     data['credit'] = '-'
             trial_balance.append(data)
         # trial_balance = sorted(trial_balance, key=lambda x:x['account_head'])
@@ -208,8 +207,8 @@ class ProfitAndLoss(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        expenses = AccountSubLedger.objects.filter(account_chart__account_type="Expense")
-        revenues = AccountSubLedger.objects.filter(account_chart__account_type="Revenue")
+        expenses = AccountLedger.objects.filter(account_chart__account_type="Expense")
+        revenues = AccountLedger.objects.filter(account_chart__account_type="Revenue")
 
         revenue_list= []
         revenue_total = 0
@@ -217,11 +216,11 @@ class ProfitAndLoss(TemplateView):
         expense_total = 0
 
         for revenue in revenues:
-            revenue_list.append({'title':revenue.sub_ledger_name, 'amount': revenue.total_value})
+            revenue_list.append({'title':revenue.ledger_name, 'amount': revenue.total_value})
             revenue_total += revenue.total_value
 
         for expense in expenses:
-            expense_list.append({'title':expense.sub_ledger_name, 'amount': expense.total_value})
+            expense_list.append({'title':expense.ledger_name, 'amount': expense.total_value})
             expense_total += expense.total_value
 
         context['expenses'] = expense_list
@@ -243,19 +242,19 @@ class BalanceSheet(TemplateView):
 
         assets = AccountChart.objects.filter(account_type='Asset')
         for ledger in assets:
-            sub = AccountSubLedger.objects.filter(account_chart__ledger=ledger, total_value__gt=0)
+            sub = AccountLedger.objects.filter(account_chart__group=ledger, total_value__gt=0)
             if sub:
-                asset_dict[ledger.ledger] = sub
+                asset_dict[ledger.group] = sub
 
 
         liabilities = AccountChart.objects.filter(Q(account_type="Liability") | Q(account_type="Equity") )
         for ledger in liabilities:
-            sub = AccountSubLedger.objects.filter(account_chart__ledger=ledger, total_value__gt=0)
+            sub = AccountLedger.objects.filter(account_chart__group=ledger, total_value__gt=0)
             if sub:
-                liability_dict[ledger.ledger] = sub
+                liability_dict[ledger.group] = sub
 
-        asset_total = AccountSubLedger.objects.filter(account_chart__account_type='Asset').aggregate(Sum('total_value')).get('total_value__sum')
-        liability_total = AccountSubLedger.objects.filter(Q(account_chart__account_type="Liability") | Q(account_chart__account_type="Equity") )\
+        asset_total = AccountLedger.objects.filter(account_chart__account_type='Asset').aggregate(Sum('total_value')).get('total_value__sum')
+        liability_total = AccountLedger.objects.filter(Q(account_chart__account_type="Liability") | Q(account_chart__account_type="Equity") )\
                                     .aggregate(Sum('total_value')).get('total_value__sum')
         
 

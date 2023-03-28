@@ -2,7 +2,7 @@ from django import forms
 from .models import Vendor, ProductPurchase
 from root.forms import BaseForm
 from product.models import Product
-from accounting.models import AccountChart, AccountSubLedger
+from accounting.models import AccountChart, AccountLedger
 
 class VendorForm(BaseForm, forms.ModelForm):
     class Meta:
@@ -95,7 +95,7 @@ class AssetPurchaseForm(BaseForm, forms.ModelForm):
     vendor = forms.ModelChoiceField(
         queryset=Vendor.objects.all()
     )
-    # debit_account =  forms.ModelChoiceField( queryset=AccountSubLedger.objects.filter(account_chart=AccountChart.objects.filter(ledger="Fixed Assets").first()))
+    # debit_account =  forms.ModelChoiceField( queryset=AccountLedger.objects.filter(account_chart=AccountChart.objects.filter(ledger="Fixed Assets").first()))
     
 
     field_order = [ 'bill_no', 'bill_date', 'pp_no', 'vendor', 'assets', 'sub_total', 'discount_percentage', 'discount_amount', 'taxable_amount',
@@ -112,7 +112,7 @@ class AssetPurchaseForm(BaseForm, forms.ModelForm):
         self.fields["tax_amount"].label = "VAT Amount"
         self.fields["discount_amount"].widget.attrs["readonly"] = True
         self.fields["amount_in_words"].widget.attrs["readonly"] = True
-        self.fields["debit_account"] = forms.ModelChoiceField( queryset=AccountSubLedger.objects.filter(account_chart=AccountChart.objects.filter(ledger="Fixed Assets").first()))
+        self.fields["debit_account"] = forms.ModelChoiceField( queryset=AccountLedger.objects.filter(account_chart=AccountChart.objects.filter(group="Fixed Assets").first()))
         self.fields["debit_account"].widget.attrs = {
             "tags":"true",
             "class":"form-select",
