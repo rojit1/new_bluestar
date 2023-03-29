@@ -158,7 +158,8 @@ class JournalEntryView(View):
             }
             return render(request, 'accounting/journal/journal_voucher.html', context)
             
-        journal_entries = TblJournalEntry.objects.all()
+
+        journal_entries = TblJournalEntry.objects.prefetch_related('tbldrjournalentry_set').all()
         return render(request, 'accounting/journal/journal_list.html',  {'journal_entries': journal_entries})
 
 

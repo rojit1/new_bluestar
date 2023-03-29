@@ -26,7 +26,7 @@
                             <td>{{forloop.counter}}</td>
                             <td>{{entry.employee_name}}</td>
                             <td>{{entry.created_at}}</td>
-                            <td>{{entry.tblcrjournalentry_set.first.credit_amount}}</td>
+                            <td>{{entry.journal_total}}</td>
                             <td><a href="{% url 'journal_detail' entry.pk %}"><span class="badge badge-success">View</span></a></td>
                         </tr>
                         {% endfor %}

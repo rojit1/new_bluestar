@@ -29,6 +29,7 @@ class AccountLedger(AccountBaseModel):
 
 class TblJournalEntry(AccountBaseModel):
     employee_name = models.CharField(max_length=100, null=True, blank=True)
+    journal_total = models.DecimalField(max_digits=9, decimal_places=2, default=0)
 
     def __str__(self):
         return 'Journal Entry'
