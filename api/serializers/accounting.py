@@ -19,7 +19,7 @@ class JournalEntryModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TblJournalEntry
-        exclude = 'created_at', "updated_at"
+        exclude = "updated_at",
 
 class AccountLedgerSerializer(serializers.ModelSerializer):
     class Meta:
