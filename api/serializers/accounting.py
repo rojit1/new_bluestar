@@ -2,6 +2,9 @@ from rest_framework import serializers
 from accounting.models import TblJournalEntry, TblDrJournalEntry, TblCrJournalEntry, AccountLedger
 
 class DrJournalEntrySerialzier(serializers.ModelSerializer):
+    ledger = serializers.StringRelatedField()
+    sub_ledger = serializers.StringRelatedField()
+
     class Meta:
         model = TblDrJournalEntry
         exclude = 'created_at', "updated_at"

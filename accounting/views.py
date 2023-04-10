@@ -191,7 +191,6 @@ class JournalEntryCreateView(View):
         return redirect('journal_list')
 
 
-
 class JournalEntryView(View):
 
     def get(self, request, pk=None):

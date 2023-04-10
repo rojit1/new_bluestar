@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from api.serializers.accounting import JournalEntryModelSerializer, AccountLedgerSerializer
 from django.shortcuts import get_object_or_404
+from django.db.models import Q, Sum
+from django.forms.models import model_to_dict
 
 @api_view(['PUT'])
 def update_account_type(request, pk):
@@ -45,7 +47,10 @@ class ChartOfAccountAPIView(APIView):
                 data[ac.account_type] = {"groups":[]}
             data[ac.account_type]["groups"].append({"group_name":ac.group, "ledgers":[]})
             for ledger in ac.accountledger_set.all():
-                data[ac.account_type]["groups"][-1]['ledgers'].append({"name":ledger.ledger_name, "total_value":ledger.total_value})
+                data[ac.account_type]["groups"][-1]['ledgers'].append({"name":ledger.ledger_name, "total_value":ledger.total_value, "sub_ledgers":[]})
+                for subl in ledger.accountsubledger_set.all():
+                    data[ac.account_type]["groups"][-1]['ledgers'][-1]["sub_ledgers"].append({"name":subl.sub_ledger_name, "value":subl.total_value})
+
         return Response(data)
     
 
@@ -121,6 +126,52 @@ class ProfitAndLossAPIView(APIView):
 class BalanceSheetAPIView(APIView):
 
     def get(self, request):
+        context = {}
+        asset_dict = {}
+        liability_dict = {}
+
+        assets = AccountChart.objects.filter(account_type='Asset')
+        for ledger in assets:
+            sub = AccountLedger.objects.filter(account_chart__group=ledger, total_value__gt=0)
+            if sub:
+                asset_dict[ledger.group] = []
+                for s in sub:
+                    subledger = model_to_dict(s)
+                    del subledger['id']
+                    del subledger['account_chart']
+                    del subledger['is_editable']
+                    asset_dict[ledger.group].append(subledger)
+
+        liabilities = AccountChart.objects.filter(Q(account_type="Liability") | Q(account_type="Equity") )
+        for ledger in liabilities:
+            sub = AccountLedger.objects.filter(account_chart__group=ledger, total_value__gt=0)
+            if sub:
+                liability_dict[ledger.group] = []
+                for s in sub:
+                    subledger = model_to_dict(s)
+                    del subledger['id']
+                    del subledger['account_chart']
+                    del subledger['is_editable']
+                    liability_dict[ledger.group].append(subledger)
+
+        asset_total = AccountLedger.objects.filter(account_chart__account_type='Asset').aggregate(Sum('total_value')).get('total_value__sum')
+        liability_total = AccountLedger.objects.filter(Q(account_chart__account_type="Liability") | Q(account_chart__account_type="Equity") )\
+                                    .aggregate(Sum('total_value')).get('total_value__sum')
         
-        return Response({})
+
+        if asset_total and liability_total:
+            if asset_total > liability_total:
+                context['retained_earnings'] =  asset_total-liability_total
+                context['liability_total'] = liability_total + asset_total-liability_total
+                context['asset_total'] = asset_total
+
+            else:
+                context['retained_loss'] =  liability_total-asset_total
+                context['asset_total'] = asset_total + liability_total-asset_total
+                context['liability_total'] = liability_total
+            
+
+        context['assets'] = asset_dict
+        context['liabilities'] =  liability_dict
+        return Response(context)
 
