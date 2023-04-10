@@ -25,6 +25,19 @@
   .ledger-ul {
     font-size: 120%;
   }
+  .subledger-ul{
+    border-radius: 3%;
+    background-color: rgb(233, 237, 240);
+    border: 1px solid rgb(131, 126, 126);
+  }
+  .subledger-ul li {
+    list-style-type: none;
+  }
+  
+  [contenteditable] {
+  padding: 10px;
+  }
+
 </style>
 
 {% include 'components/title_bar.html' with title=' Chart of Acounts ' %}
@@ -45,15 +58,33 @@
         <ul class="ledger-ul">
           {% for asset in assets %}
           <div draggable="true" id="{{asset.pk}}" ondragstart="drag(event)">
-            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{asset.pk}} data-is-editable="{{asset.is_editable}}">
-              {{asset}} <a href="{% url 'accountledger_create' %}?ledgerType={{asset}}" class="bi bi-plus fa-lg"></a>
+            <li class="fw-bolder">
+              <span ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{asset.pk}} data-is-editable="{{asset.is_editable}}">
+                {{asset}}
+              </span>
+              <a href="{% url 'accountledger_create' %}?ledgerType={{asset}}" class="fas fa-plus"></a>
             </li>
             <ul>
               {% for ledger in asset.accountledger_set.all %}
-              <li ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
-                title="{{ledger.total_value}}">
-                {{ledger}}</li>
+              <li>
+                <span ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}">
+                {{ledger}}
+              </span>
+                <a href="{% url 'subledger_create' %}?ledgerType={{ledger}}" class="bi bi-plus fa-lg"></a>
                 <small class="fw-bolder d-none"><u>{{ledger.total_value}}</u></small>
+
+                {% if ledger.accountsubledger_set.count > 0 %}
+                <ul class="subledger-ul d-none">
+                  {% for sub in ledger.accountsubledger_set.all %}
+                  <li>
+                    <i class="bi bi-arrow-return-right text-dark fa-lg"></i>
+                    <span ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{sub.pk}} data-is-editable="{{sub.is_editable}}">{{sub}}</span>
+                    <span class="fw-bold">({{sub.total_value}})</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
+              </li>
               {% endfor %}
             </ul>
           </div>
@@ -78,14 +109,33 @@
         <ul class="ledger-ul">
           {% for liability in liabilities %}
           <div draggable="true" id="{{liability.pk}}" ondragstart="drag(event)">
-            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{liability.pk}} data-is-editable="{{liability.is_editable}}">
-              {{liability}} <a href="{% url 'accountledger_create' %}?ledgerType={{liability}}"
-                class="bi bi-plus fa-lg"></a> </li>
+            <li class="fw-bolder">
+              <span ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{liability.pk}} data-is-editable="{{liability.is_editable}}">
+                {{liability}} 
+              </span>
+              <a href="{% url 'accountledger_create' %}?ledgerType={{liability}}"
+                class="fa fa-plus"></a> </li>
             <ul>
               {% for ledger in liability.accountledger_set.all %}
-              <li ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
-                title="{{ledger.total_value}}">{{ledger}}</li>
+              <li>
+                <span ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
+                title="{{ledger.total_value}}">{{ledger}}</span>
+                <a href="{% url 'subledger_create' %}?ledgerType={{ledger}}" class="bi bi-plus fa-lg"></a>
+              </li>  
+                
                 <small class="fw-bolder d-none"><u>{{ledger.total_value}}</u></small>
+
+                {% if ledger.accountsubledger_set.count > 0 %}
+                <ul class="subledger-ul d-none">
+                  {% for sub in ledger.accountsubledger_set.all %}
+                  <li>
+                    <i class="bi bi-arrow-return-right text-dark fa-lg"></i>
+                    <span ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{sub.pk}} data-is-editable="{{sub.is_editable}}">{{sub}}</span>
+                    <span class="fw-bold">({{sub.total_value}})</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
               {% endfor %}
             </ul>
           </div>
@@ -94,6 +144,7 @@
       </div>
     </div>
   </div>
+  
   <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 d-flex">
     <div class="card w-100">
       <div class="card-body" id="droppable-Equity" ondragover="dragover_handler(event)"
@@ -108,15 +159,33 @@
         <ul class="ledger-ul">
           {% for equity in equities %}
           <div draggable="true" id="{{equity.pk}}" ondragstart="drag(event)">
-            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{equity.pk}} data-is-editable="{{equity.is_editable}}">
-              {{equity}}
-              <a href="{% url 'accountledger_create' %}?ledgerType={{equity}}" class="bi bi-plus fa-lg"></a>
+            <li class="fw-bolder">
+              <span ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{equity.pk}} data-is-editable="{{equity.is_editable}}">
+                {{equity}}
+              </span>
+              <a href="{% url 'accountledger_create' %}?ledgerType={{equity}}" class="fa fa-plus"></a>
             </li>
             <ul>
               {% for ledger in equity.accountledger_set.all %}
-              <li ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
-                title="{{ledger.total_value}}">{{ledger}}</li>
+              <li>
+                <span ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
+                title="{{ledger.total_value}}">
+                  {{ledger}}
+                </span>
+                <a href="{% url 'subledger_create' %}?ledgerType={{ledger}}" class="bi bi-plus fa-lg"></a>
+              </li>
                 <small class="fw-bolder d-none"><u>{{ledger.total_value}}</u></small>
+                {% if ledger.accountsubledger_set.count > 0 %}
+                <ul class="subledger-ul d-none">
+                  {% for sub in ledger.accountsubledger_set.all %}
+                  <li>
+                    <i class="bi bi-arrow-return-right text-dark fa-lg"></i>
+                    <span ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{sub.pk}} data-is-editable="{{sub.is_editable}}">{{sub}}</span>
+                    <span class="fw-bold">({{sub.total_value}})</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
               {% endfor %}
             </ul>
           </div>
@@ -140,15 +209,32 @@
         <ul class="ledger-ul">
           {% for revenue in revenues %}
           <div draggable="true" id="{{revenue.pk}}" ondragstart="drag(event)">
-            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{revenue.pk}} data-is-editable="{{revenue.is_editable}}">
-              {{revenue}} <a href="{% url 'accountledger_create' %}?ledgerType={{revenue}}"
-                class="bi bi-plus fa-lg"></a>
+            <li class="fw-bolder">
+              <span ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{revenue.pk}} data-is-editable="{{revenue.is_editable}}">
+                {{revenue}}
+              </span>
+              <a href="{% url 'accountledger_create' %}?ledgerType={{revenue}}"
+                class="fa fa-plus"></a>
             </li>
             <ul>
               {% for ledger in revenue.accountledger_set.all %}
-              <li ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
-                title="{{ledger.total_value}}">{{ledger}}</li>
+              <li>
+                <span ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
+                title="{{ledger.total_value}}">{{ledger}}</span>
+                <a href="{% url 'subledger_create' %}?ledgerType={{ledger}}" class="bi bi-plus fa-lg"></a>
+              </li>
                 <small class="fw-bolder d-none"><u>{{ledger.total_value}}</u></small>
+                {% if ledger.accountsubledger_set.count > 0 %}
+                <ul class="subledger-ul d-none">
+                  {% for sub in ledger.accountsubledger_set.all %}
+                  <li>
+                    <i class="bi bi-arrow-return-right text-dark fa-lg"></i>
+                    <span ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{sub.pk}} data-is-editable="{{sub.is_editable}}">{{sub}}</span>
+                    <span class="fw-bold">({{sub.total_value}})</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
               {% endfor %}
             </ul>
           </div>
@@ -158,7 +244,6 @@
       </div>
     </div>
   </div>
-
 
   <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 d-flex">
     <div class="card w-100">
@@ -175,15 +260,32 @@
         <ul class="ledger-ul">
           {% for expense in expenses %}
           <div draggable="true" id="{{expense.pk}}" ondragstart="drag(event)">
-            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{expense.pk}} data-is-editable="{{expense.is_editable}}">
-              {{expense}} <a href="{% url 'accountledger_create' %}?ledgerType={{expense}}"
-                class="bi bi-plus fa-lg"></a>
+            <li class="fw-bolder">
+              <span ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{expense.pk}} data-is-editable="{{expense.is_editable}}">
+                {{expense}}
+              </span>
+              <a href="{% url 'accountledger_create' %}?ledgerType={{expense}}"
+                class="fa fa-plus"></a>
             </li>
             <ul>
               {% for ledger in expense.accountledger_set.all %}
-              <li ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
-                title="{{ledger.total_value}}">{{ledger}}</li>
+              <li>
+                <span ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
+                title="{{ledger.total_value}}">{{ledger}}</span>
+                <a href="{% url 'subledger_create' %}?ledgerType={{ledger}}" class="bi bi-plus fa-lg"></a>
+              </li>
                 <small class="fw-bolder d-none"><u>{{ledger.total_value}}</u></small>
+                {% if ledger.accountsubledger_set.count > 0 %}
+                <ul class="subledger-ul d-none">
+                  {% for sub in ledger.accountsubledger_set.all %}
+                  <li>
+                    <i class="bi bi-arrow-return-right text-dark fa-lg"></i>
+                    <span ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{sub.pk}} data-is-editable="{{sub.is_editable}}">{{sub}}</span>
+                    <span class="fw-bold">({{sub.total_value}})</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
               {% endfor %}
             </ul>
           </div>
@@ -208,15 +310,33 @@
         <ul class="ledger-ul">
           {% for other in others %}
           <div draggable="true" id="{{other.pk}}" ondragstart="drag(event)">
-            <li class="fw-bolder" ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{other.pk}} data-is-editable="{{other.is_editable}}">
-              {{other}}
-              <a href="{% url 'accountledger_create' %}?ledgerType={{other}}" class="bi bi-plus fa-lg"></a>
+            <li class="fw-bolder">
+              <span ondblclick="handleDblClick(this)" onblur="groupUpdate(this)" id={{other.pk}} data-is-editable="{{other.is_editable}}">
+                {{other}}
+              </span>
+              <a href="{% url 'accountledger_create' %}?ledgerType={{other}}" class="fa fa-plus"></a>
             </li>
             <ul>
               {% for ledger in other.accountledger_set.all %}
-              <li ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
-                title="{{ledger.total_value}}">{{ledger}}</li>
+              <li>
+                <span ondblclick="handleDblClick(this)" onblur="ledgerUpdate(this)" id={{ledger.pk}} data-is-editable="{{ledger.is_editable}}"
+                title="{{ledger.total_value}}">
+                  {{ledger}}
+                </span>
+                <a href="{% url 'subledger_create' %}?ledgerType={{ledger}}" class="bi bi-plus fa-lg"></a>
+              </li>
                 <small class="fw-bolder d-none"><u>{{ledger.total_value}}</u></small>
+                {% if ledger.accountsubledger_set.count > 0 %}
+                <ul class="subledger-ul d-none">
+                  {% for sub in ledger.accountsubledger_set.all %}
+                  <li>
+                    <i class="bi bi-arrow-return-right text-dark fa-lg"></i>
+                    <span ondblclick="handleDblClick(this)" onblur="subLedgerUpdate(this)" id={{sub.pk}} data-is-editable="{{sub.is_editable}}">{{sub}}</span>
+                    <span class="fw-bold">({{sub.total_value}})</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
               {% endfor %}
             </ul>
           </div>
@@ -226,13 +346,30 @@
     </div>
   </div>
 
+  <script>
+    let editable = document.querySelectorAll('[data-is-editable=True]')
+    for(let i of editable){
+      i.style.cursor="pointer"
+    }
+  </script>
 
   <script>
 
     function showDetails(cardId) {
       let card = document.getElementById(cardId)
       let items = card.getElementsByTagName('small')
+      let subledgerArray = card.getElementsByClassName('subledger-ul')
+
       for(let item of items){
+        if(item.classList.contains('d-none')){
+          item.classList.remove('d-none')
+          item.classList.add('d-block')
+        }else{
+          item.classList.remove('d-block')
+          item.classList.add('d-none')
+        }
+      }
+      for(let item of subledgerArray){
         if(item.classList.contains('d-none')){
           item.classList.remove('d-none')
           item.classList.add('d-block')
@@ -270,10 +407,16 @@
         url: `/api/update-account-type/${data}/?accountType=${accountType}`,
         type: 'PUT',
         success: function (result) {
-          Swal.fire('Updated!!')
+          Swal.fire({
+          position: 'top-end',
+          icon: 'success',
+          title: 'Your work has been saved',
+          showConfirmButton: false,
+          timer: 500
+        })
         }
       });
-      location.reload()
+      // location.reload()
     }
 
 
@@ -313,7 +456,13 @@
               content: value.trim()
             },
             success: function (result) {
-              Swal.fire('Updated', '', 'success')
+              Swal.fire({
+              position: 'top-end',
+              icon: 'success',
+              title: 'Your work has been saved',
+              showConfirmButton: false,
+              timer: 1000
+            })
             }
           });
         }
@@ -347,11 +496,51 @@
               content: value.trim()
             },
             success: function (result) {
-              Swal.fire(
-                'Updated',
-                '',
-                'success'
-              )
+              Swal.fire({
+              position: 'top-end',
+              icon: 'success',
+              title: 'Your work has been saved',
+              showConfirmButton: false,
+              timer: 1000
+            })
+            }
+          });
+        }
+      })
+
+    }
+
+    function subLedgerUpdate(e) {
+      e.setAttribute('contenteditable', false)
+      const id = parseInt(e.id)
+      const value = e.innerText
+
+      Swal.fire({
+        title: 'Do you want to save the changes?',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Update',
+        denyButtonText: `Don't save`,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajaxSetup({
+            headers: { "X-CSRFToken": '{{csrf_token}}' }
+          });
+
+          $.ajax({
+            url: `/api/update-account-subledger/${id}/`,
+            type: 'PUT',
+            data: {
+              content: value.trim()
+            },
+            success: function (result) {
+              Swal.fire({
+              position: 'top-end',
+              icon: 'success',
+              title: 'Your work has been saved',
+              showConfirmButton: false,
+              timer: 1000
+            })
             }
           });
         }

@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 from .forms import AccountChartForm
 from decimal import Decimal as D
 from django.db.models import Q, Sum
+from django.contrib import messages
 
 
 class AccountChartMixin:
@@ -83,54 +84,109 @@ class AccountLedgerDelete(AccountChartMixin, DeleteMixin, View):
     pass
 
 
-from .models import TblDrJournalEntry, TblCrJournalEntry, TblJournalEntry
+from .forms import AccountSubLedgerForm
+class AccountSubLedgerCreate(CreateView):
+    template_name = "accounting/subledger/create.html"
+    form_class = AccountSubLedgerForm
+    success_url = reverse_lazy('accountchart_list')
+
+
+
+from .models import TblDrJournalEntry, TblCrJournalEntry, TblJournalEntry, AccountSubLedger
 from .forms import JournalEntryForm
 
 class JournalEntryCreateView(View):
 
     def get(self, request):
-        form = JournalEntryForm
-        return render(request, 'accounting/journal/journal_entry_create.html', {'form':form})
+        ledgers = AccountLedger.objects.all()
+        sub_ledgers = AccountSubLedger.objects.all()
+        return render(request, 'accounting/journal/journal_entry_create.html', {'ledgers':ledgers, 'sub_ledgers':sub_ledgers})
+    
+    def get_subledger(self, subledger, ledger):
+        subled = None
+        if not subledger.startswith('-'):
+            try:
+                subledger_id = int(subledger)
+                subled = AccountSubLedger.objects.get(pk=subledger_id)
+            except ValueError:
+                subled = AccountSubLedger.objects.create(sub_ledger_name=subledger, is_editable=True, ledger=ledger)
+        return subled
     
     def post(self, request):
-        form = JournalEntryForm(request.POST)
-        if form.is_valid():
-            journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username)
+        data = request.POST
+        debit_ledgers = data.getlist('debit_ledger', [])
+        debit_particulars = data.getlist('debit_particular', [])
+        debit_amounts = data.getlist('debit_amount', [])
+        debit_subledgers = data.getlist('debit_subledger', [])
 
-            debit_ledger = request.POST.get('debit_ledger')
-            debit_particulars = request.POST.get('debit_particulars')
-            debit_amount = D(request.POST.get('debit_amount', 0.0))
-            debit_ledger = AccountLedger.objects.get(pk=int(debit_ledger))
+        credit_ledgers = data.getlist('credit_ledger', [])
+        credit_particulars = data.getlist('credit_particular', [])
+        credit_amounts = data.getlist('credit_amount', [])
+        credit_subledgers = data.getlist('credit_subledger', [])
+
+        ledgers = AccountLedger.objects.all()
+        sub_ledgers = AccountSubLedger.objects.all()
+
+        try:
+            parsed_debitamt = (lambda x: [D(i) for i in x])(debit_amounts)
+            parsed_creditamt = (lambda x: [D(i) for i in x])(credit_amounts)
+        except Exception:
+            messages.error(request, "Please Enter valid amount")
+            return render(request, 'accounting/journal/journal_entry_create.html', {'ledgers':ledgers, 'sub_ledgers':sub_ledgers})
+        
+        debit_sum, credit_sum = sum(parsed_debitamt), sum(parsed_creditamt)
+        if debit_sum != credit_sum:
+            messages.error(request, "Debit Total and Credit Total must be equal")
+            return render(request, 'accounting/journal/journal_entry_create.html', {'ledgers':ledgers, 'sub_ledgers':sub_ledgers})
+
+        for dr in debit_ledgers:
+            if dr.startswith('-'):
+                messages.error(request, "Ledger must be selected")
+                return render(request, 'accounting/journal/journal_entry_create.html', {'ledgers':ledgers, 'sub_ledgers':sub_ledgers}) 
+
+        journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username, journal_total=debit_sum)
+        for i in range(len(debit_ledgers)):
+            debit_ledger_id = int(debit_ledgers[i])
+            debit_ledger = AccountLedger.objects.get(pk=debit_ledger_id)
+            debit_particular = debit_particulars[i]
+            debit_amount = D(debit_amounts[i])
+            subledger = self.get_subledger( debit_subledgers[i], debit_ledger)
             debit_ledger_type = debit_ledger.account_chart.account_type
-
-
-            credit_ledger = request.POST.get('credit_ledger')
-            credit_ledger = AccountLedger.objects.get(pk=int(credit_ledger))
-            credit_ledger_type = credit_ledger.account_chart.account_type
-            credit_particulars = request.POST.get('credit_particulars')
-            credit_amount = D(request.POST.get('credit_amount', 0.0))
-
-
-
-            TblDrJournalEntry.objects.create(ledger=debit_ledger, journal_entry=journal_entry, particulars=debit_particulars, debit_amount=debit_amount)
-            TblCrJournalEntry.objects.create(ledger=credit_ledger, journal_entry=journal_entry,particulars=credit_particulars, credit_amount=credit_amount)
-
+            TblDrJournalEntry.objects.create(ledger=debit_ledger, journal_entry=journal_entry, particulars=debit_particular, debit_amount=debit_amount, sub_ledger=subledger)
             if debit_ledger_type in ['Asset', 'Expense']:
                 debit_ledger.total_value =debit_ledger.total_value + debit_amount
                 debit_ledger.save()
+                if subledger:
+                    subledger.total_value = subledger.total_value + debit_amount
+                    subledger.save()
+
             elif debit_ledger_type in ['Liability', 'Revenue', 'Equity']:
                 debit_ledger.total_value = debit_ledger.total_value - debit_amount
                 debit_ledger.save()
+                if subledger:
+                    subledger.total_value = subledger.total_value - debit_amount
+                    subledger.save()
 
+        for i in range(len(credit_ledgers)):
+            credit_ledger_id = int(credit_ledgers[i])
+            credit_ledger = AccountLedger.objects.get(pk=credit_ledger_id)
+            credit_particular = credit_particulars[i]
+            credit_amount = D(credit_amounts[i])
+            subledger = self.get_subledger( credit_subledgers[i], credit_ledger)
+            credit_ledger_type = credit_ledger.account_chart.account_type
+            TblCrJournalEntry.objects.create(ledger=credit_ledger, journal_entry=journal_entry, particulars=credit_particular, credit_amount=credit_amount, sub_ledger=subledger)
             if credit_ledger_type in ['Asset', 'Expense']:
                 credit_ledger.total_value = credit_ledger.total_value - credit_amount
                 credit_ledger.save()
-
+                if subledger:
+                    subledger.total_value = subledger.total_value - credit_amount
+                    subledger.save()
             elif credit_ledger_type in ['Liability', 'Revenue', 'Equity']:
                 credit_ledger.total_value = credit_ledger.total_value + credit_amount
                 credit_ledger.save()
-
-
+                if subledger:
+                    subledger.total_value = subledger.total_value + credit_amount
+                    subledger.save()
 
         return redirect('journal_list')
 
@@ -171,7 +227,7 @@ class TrialBalanceView(View):
         ledgers = AccountLedger.objects.filter(total_value__gt=0)
         for led in ledgers:
             data = {}
-            data['account']=led.ledger_name
+            data['ledger']=led.ledger_name
             account_type = led.account_chart.account_type
             data['account_head']=account_type
 
@@ -194,6 +250,25 @@ class TrialBalanceView(View):
                     total['debit_total'] += led.total_value
                     data['credit'] = '-'
             trial_balance.append(data)
+
+        vat_receivable, vat_payable = 0, 0
+        for data in trial_balance:
+            if data['ledger'] == 'VAT Receivable':
+                vat_receivable = data['debit']
+                total['debit_total'] -= data['debit']
+                trial_balance.remove(data)
+            if data['ledger'] == 'VAT Payable':
+                vat_payable = data['credit']
+                total['credit_total'] -= data['credit']
+                trial_balance.remove(data)
+        vat_amount = vat_receivable - vat_payable
+        if vat_amount > 0:
+            trial_balance.append({'ledger':'VAT', 'account_head':'Asset', 'debit':vat_amount, 'credit':'-'})
+            total['debit_total'] += vat_amount
+        elif vat_amount < 0:
+            trial_balance.append({'ledger':'VAT', 'account_head':'Liability', 'debit':'-', 'credit':abs(vat_amount)})
+            total['credit_total'] += abs(vat_amount)
+
         trial_balance = sorted(trial_balance, key=lambda x:x['account_head'])
         context = {
             'trial_balance': trial_balance,

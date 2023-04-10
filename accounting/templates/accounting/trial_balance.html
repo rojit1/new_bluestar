@@ -1,9 +1,15 @@
 {%extends 'base.html'%}
+{% load humanize %}
 {% block pagetitle %}Trial Balance {% endblock %}
 {% block home %} {% url 'trial_balance_view' %} {% endblock %}
 {% block title %}Trial Balance {% endblock %}
 {% block content %}
 {% include 'components/title_bar.html' with title=' Trial Balance '  %}
+<style>
+    td{
+        letter-spacing: 1px;
+    }
+</style>
 <div class="card">
 
     <div class="card-body pt-0">
@@ -13,7 +19,7 @@
                     id="kt_customers_table">
 
 
-                    <thead>
+                    <thead class="fw-bolder">
                         <th>S.N</th>
                         <th>Account</th>
                         <th>Account Head</th>
@@ -24,10 +30,10 @@
                         {% for data in trial_balance %}
                         <tr>
                             <td>{{forloop.counter}}</td>
-                            <td>{{data.account}}</td>
+                            <td>{{data.ledger}}</td>
                             <td>{{data.account_head}}</td>
-                            <td>{{data.debit}}</td>
-                            <td>{{data.credit}}</td>
+                            <td>{{data.debit|intcomma}}</td>
+                            <td>{{data.credit|intcomma}}</td>
                         </tr>
                         {% endfor %}
                         <hr>
@@ -35,8 +41,8 @@
                             <td></td>
                             <td>Total</td>
                             <td></td>
-                            <td><p class="fw-bolder text-primary">{{total.debit_total}}</p> </td>
-                            <td><p class="fw-bolder text-primary">{{total.credit_total}}</p></td>
+                            <td><p class="fw-bolder text-primary">{{total.debit_total|intcomma}}</p> </td>
+                            <td><p class="fw-bolder text-primary">{{total.credit_total|intcomma}}</p></td>
                         </tr>
                     </tbody>
                 </table>

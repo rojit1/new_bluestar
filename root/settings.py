@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'django.contrib.humanize',
 ]
 CUSTOM_APPS = ["bill", "organization", "user", "product", "api", "discount", "purchase", "accounting"]
 THIRD_PARTY_APPS = [

@@ -26,6 +26,18 @@ class AccountLedger(AccountBaseModel):
     def __str__(self):
         return self.ledger_name
     
+    
+class AccountSubLedger(AccountBaseModel):
+    ledger = models.ForeignKey(AccountLedger, on_delete=models.PROTECT)
+    sub_ledger_name = models.CharField(max_length=100, unique=True)
+    total_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    is_editable = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.sub_ledger_name
+    
+
+
 
 class TblJournalEntry(AccountBaseModel):
     employee_name = models.CharField(max_length=100, null=True, blank=True)
@@ -37,6 +49,7 @@ class TblJournalEntry(AccountBaseModel):
 
 class TblCrJournalEntry(AccountBaseModel):
     ledger = models.ForeignKey(AccountLedger, on_delete=models.PROTECT)
+    sub_ledger = models.ForeignKey(AccountSubLedger, null=True, on_delete=models.SET_NULL)
     journal_entry = models.ForeignKey(TblJournalEntry, on_delete=models.PROTECT)
     particulars = models.TextField(max_length=255)
     credit_amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)
@@ -47,6 +60,7 @@ class TblCrJournalEntry(AccountBaseModel):
 
 class TblDrJournalEntry(AccountBaseModel):
     ledger = models.ForeignKey(AccountLedger, on_delete=models.PROTECT)
+    sub_ledger = models.ForeignKey(AccountSubLedger, null=True, on_delete=models.SET_NULL)
     journal_entry = models.ForeignKey(TblJournalEntry, on_delete=models.PROTECT)
     particulars = models.TextField(max_length=255)
     debit_amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)

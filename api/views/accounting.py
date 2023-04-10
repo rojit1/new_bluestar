@@ -1,30 +1,38 @@
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
-from accounting.models import AccountChart, AccountLedger, TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry
+from accounting.models import AccountChart, AccountLedger, TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountSubLedger
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from api.serializers.accounting import JournalEntryModelSerializer, AccountLedgerSerializer
+from django.shortcuts import get_object_or_404
 
 @api_view(['PUT'])
 def update_account_type(request, pk):
-    ac = AccountChart.objects.get(pk=pk)
+    ac = get_object_or_404(AccountChart, pk=pk)
     ac.account_type=request.query_params.get('accountType')
     ac.save()
     return Response({'Message': 'Successful'})
 
 @api_view(['PUT'])
 def update_account_ledger(request, pk):
-    subledger = AccountLedger.objects.get(pk=pk)
+    subledger = get_object_or_404(AccountLedger, pk=pk)
     subledger.ledger_name = request.data.get('content', subledger.ledger_name)
     subledger.save()
     return Response({'Message': 'Successful'})
 
 @api_view(['PUT'])
 def update_account_group(request, pk):
-    ledger = AccountChart.objects.get(pk=pk)
+    ledger = get_object_or_404(AccountChart, pk=pk)
     ledger.group = request.data.get('content', ledger.group)
     ledger.save()
+    return Response({'Message': 'Successful'})
+
+@api_view(['PUT'])
+def update_account_subledger(request, pk):
+    sub_ledger = get_object_or_404(AccountSubLedger, pk=pk)
+    sub_ledger.sub_ledger_name = request.data.get('content', sub_ledger.sub_ledger_name)
+    sub_ledger.save()
     return Response({'Message': 'Successful'})
 
 

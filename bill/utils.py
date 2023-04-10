@@ -8,6 +8,8 @@ def create_journal_for_bill(instance):
 
     if payment_mode == 'Credit':
         pass
+    elif payment_mode == "Credit Card":
+        pass
     else:
         
         cash_ledger = AccountLedger.objects.get(ledger_name='Cash-In-Hand')

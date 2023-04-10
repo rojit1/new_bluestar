@@ -1,9 +1,19 @@
 {%extends 'base.html'%}
+{% load humanize %}
 {% block pagetitle %} P&L Statement {% endblock %}
 {% block home %} {% url 'trial_balance_view' %} {% endblock %}
 {% block title %} Balance Sheet {% endblock %}
 {% block content %}
 {% include 'components/title_bar.html' with title=' Balance Sheet' %}
+
+<style>
+    td{
+        letter-spacing: 1px;
+    }
+    thead th{
+        padding:5px !important;
+    }
+</style>
 <div class="card">
 
     <div class="card-body pt-0">
@@ -18,7 +28,7 @@
             <div class="table-responsive">
                 <div class="row">
                     <div class="col-md-6">
-                        <table class="table align-middle table-row-dashed fs-6 gy-5 no-footer"
+                        <table class="table align-middle table-row-dashed no-footer"
                             id="asset_table">
                             <thead class="text-primary fs-3 fw-bolder bg-secondary">
                                 <th class="col-9">Assets</th>
@@ -33,7 +43,7 @@
                                 {% for item in v %}
                                 <tr>
                                     <td class="px-8">{{ item.ledger_name }}</td>
-                                    <td>{{ item.total_value }}</td>
+                                    <td>{{ item.total_value|intcomma }}</td>
 
                                 </tr>
                                 {% endfor %}
@@ -45,8 +55,8 @@
                                         <td>Share Holders</td>
                                     </tr>
                                     <tr class="text-danger">
-                                        <td class="px-8">Retained Earnings</td>
-                                        <td>{{ asset_retained_earnings }}</td>
+                                        <td class="px-8">Retained Loss</td>
+                                        <td>{{ asset_retained_earnings|intcomma }}</td>
 
                                     </tr>
                                 {% endif %}
@@ -58,13 +68,13 @@
                                                                 
                                 <tr class="text-primary bg-secondary">
                                     <td>Total</td>
-                                    <td>{{asset_total}}</td>
+                                    <td>{{asset_total|intcomma}}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <div class="col-md-6">
-                        <table class="table align-middle table-row-dashed fs-6 gy-5"
+                        <table class="table align-middle table-row-dashed"
                             id="liability_table">
                             <thead class="text-primary bg-secondary fw-bolder fs-3">
                                 <th class="col-9">Capital & Liabilities</th>
@@ -78,7 +88,7 @@
                                 {% for item in v %}
                                 <tr>
                                     <td class="px-8">{{ item.ledger_name }}</td>
-                                    <td>{{ item.total_value }}</td>
+                                    <td>{{ item.total_value|intcomma }}</td>
 
                                 </tr>
                                 {% endfor %}
@@ -91,14 +101,14 @@
                                     </tr>
                                     <tr class="text-success">
                                         <td class="px-8">Retained Earnings</td>
-                                        <td>{{ lib_retained_earnings }}</td>
+                                        <td>{{ lib_retained_earnings|intcomma }}</td>
 
                                     </tr>
                                 {% endif %}
                                 <tbody id="dummy-liabilities"></tbody>
                                 <tr class="text-primary bg-secondary">
                                     <td>Total</td>
-                                    <td>{{liability_total}}</td>
+                                    <td>{{liability_total|intcomma}}</td>
                                 </tr>
                             </tbody>
                         </table>

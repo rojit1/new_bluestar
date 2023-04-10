@@ -5,7 +5,7 @@
 <div class="card-body p-4 m-4">
 
   <h1>{% if title %} {{title}} {% else %} Create {% endif %}</h1>
-    <form enctype="multipart/form-data" method="POST" onsubmit="document.querySelector('#id_account_chart').disabled = false;" >
+    <form enctype="multipart/form-data" method="POST" onsubmit="document.querySelector('#id_ledger').disabled=false" >
       <div class="row">
          {% for field in form.visible_fields %}
 
@@ -57,19 +57,21 @@
     if(validAccountTypes.includes(accountType)){
         document.querySelector('#id_account_type').value=accountType
     }else{
-      
+        // alert('Please select valid account type')
     }
 
-    const selectElement = document.querySelector('#id_account_chart') || null
+    const selectElement = document.querySelector('#id_ledger') || null
 
     if(selectElement){
-      selectElement.disabled = true
+        selectElement.disabled = true;
       for (let i of selectElement.options){
         if(i.label === ledgerType ){
           i.selected=true
         }
       }
+
     }
 </script>
+
 
 {% endblock %}

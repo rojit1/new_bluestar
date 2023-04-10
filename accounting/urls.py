@@ -18,6 +18,10 @@ path('accountledger/<int:pk>/update/', AccountLedgerUpdate.as_view(), name='acco
 path('accountledger/delete', AccountLedgerDelete.as_view(), name='accountledger_delete'),
 ]
 
+from .views import AccountSubLedgerCreate
+urlpatterns += [
+    path('accountsubledger/create/', AccountSubLedgerCreate.as_view(), name="subledger_create")
+]
 
 from .views import JournalEntryCreateView, JournalEntryView,  TrialBalanceView, ProfitAndLoss, BalanceSheet
 urlpatterns += [

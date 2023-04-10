@@ -1,6 +1,6 @@
 from django import forms
 from root.forms import BaseForm
-from .models import AccountChart, TblDrJournalEntry, TblCrJournalEntry, TblJournalEntry
+from .models import AccountChart, TblDrJournalEntry, TblCrJournalEntry, TblJournalEntry, AccountSubLedger
 from django.contrib.admin.widgets import FilteredSelectMultiple
 
 class AccountChartForm(BaseForm, forms.ModelForm):
@@ -12,8 +12,15 @@ class AccountChartForm(BaseForm, forms.ModelForm):
 from .models import AccountLedger
 
 class AccountLedgerForm(BaseForm, forms.ModelForm):
+    
     class Meta:
         model = AccountLedger
+        exclude = 'is_editable', "total_value"
+        
+
+class AccountSubLedgerForm(BaseForm, forms.ModelForm):
+    class Meta:
+        model = AccountSubLedger
         exclude = 'is_editable', "total_value"
 
 
