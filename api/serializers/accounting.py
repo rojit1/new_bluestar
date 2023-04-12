@@ -11,6 +11,8 @@ class DrJournalEntrySerialzier(serializers.ModelSerializer):
 
 
 class CrJournalEntrySerialzier(serializers.ModelSerializer):
+    ledger = serializers.StringRelatedField()
+    sub_ledger = serializers.StringRelatedField()
     class Meta:
         model = TblCrJournalEntry
         exclude = 'created_at', "updated_at"

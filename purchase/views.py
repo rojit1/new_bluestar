@@ -2,10 +2,9 @@ from datetime import date
 from django.urls import reverse_lazy
 from django.db.models import Sum
 from django.views.generic import CreateView,DetailView,ListView,UpdateView,View
-from django.shortcuts import get_object_or_404
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
-import xlwt
+from accounting.models import TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountLedger, AccountChart, AccountSubLedger
 
 from root.utils import DeleteMixin
 from product.models import Product
@@ -53,6 +52,40 @@ class ProductPurchaseCreateView(CreateView):
     form_class = ProductPurchaseForm
     template_name = "purchase/purchase_create.html"
 
+    def create_accounting(self, debit_account_id, payment_mode:str, username:str, sub_total, tax_amount, vendor):
+        sub_total = decimal.Decimal(sub_total)
+        tax_amount = decimal.Decimal(tax_amount)
+        total_amount =  sub_total+ tax_amount
+
+        cash_ledger = get_object_or_404(AccountLedger, ledger_name='Cash-In-Hand')
+        vat_receivable = get_object_or_404(AccountLedger, ledger_name='VAT Receivable')
+        debit_account = get_object_or_404(AccountLedger, pk=int(debit_account_id))
+        
+        journal_entry = TblJournalEntry.objects.create(employee_name=username, journal_total = total_amount)
+        TblDrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"Automatic: {debit_account.ledger_name} A/c Dr.", debit_amount=sub_total, ledger=debit_account)
+        debit_account.total_value += sub_total
+        debit_account.save()
+        if tax_amount > 0:
+            TblDrJournalEntry.objects.create(journal_entry=journal_entry, particulars="Automatic: VAT Receivable A/c Dr.", debit_amount=tax_amount, ledger=vat_receivable)
+            vat_receivable.total_value += tax_amount
+            vat_receivable.save()
+            
+
+        if payment_mode == "Credit":
+            try:
+                vendor_ledger = AccountLedger.objects.get(ledger_name=vendor)
+                vendor_ledger.total_value += total_amount
+                vendor_ledger.save()
+            except AccountLedger.DoesNotExist:
+                chart = AccountChart.objects.get(group='Sundry Creditors')
+                vendor_ledger = AccountLedger.objects.create(ledger_name=vendor, total_value=total_amount, is_editable=True, account_chart=chart)
+            TblCrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"Automatic: To {vendor_ledger.ledger_name} A/c", credit_amount=total_amount, ledger=vendor_ledger)
+        else:
+            TblCrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"Automatic: To {cash_ledger.ledger_name} A/c", credit_amount=total_amount, ledger=cash_ledger)
+            cash_ledger.total_value -= total_amount
+            cash_ledger.save()
+
+
     def form_valid(self, form):
         form_data = form.data
         bill_no = form_data.get('bill_no', None)
@@ -68,8 +101,7 @@ class ProductPurchaseCreateView(CreateView):
         grand_total = form_data.get('grand_total')
         amount_in_words = form_data.get('amount_in_words')
         payment_mode = form_data.get('payment_mode')
-
-
+        debit_account = form_data.get('debit_account')
         purchase_object = Purchase(
             vendor_id=vendor_id,sub_total=sub_total, bill_date=bill_date,
             discount_percentage=discount_percentage,discount_amount=discount_amount,
@@ -104,6 +136,8 @@ class ProductPurchaseCreateView(CreateView):
             bill_no=bill_no, bill_date=bill_date, pp_no=pp_no, vendor_name=vendor_name, vendor_pan=vendor_pan,
             item_name=item_name, quantity=total_quantity, amount=grand_total, tax_amount=tax_amount, non_tax_purchase=non_taxable_amount
         )
+        vendor_detail = str(vendor.pk)+' '+ vendor_name
+        self.create_accounting(debit_account_id=debit_account, payment_mode=payment_mode, username=self.request.user.username, sub_total=sub_total, tax_amount=tax_amount, vendor=vendor_detail)
 
         return redirect('/purchase/create/' )
     
@@ -277,7 +311,6 @@ class PurchaseBookListView(ExportExcelMixin,View):
 
 from .models import AssetPurchase, Asset, AssetPurchaseItem
 from .forms import AssetPurchaseForm
-from accounting.models import TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountLedger, AccountChart
 
 class AssetPurchaseMixin:
     model = AssetPurchase
@@ -326,10 +359,6 @@ class AssetPurchaseCreate(CreateView):
             vendor = Vendor.objects.get(pk=v_id)
         except Exception as e:
             vendor = Vendor.objects.create(name=vendor_id)
-        # import pdb
-        # pdb.set_trace()
-
-        # return redirect('/')
         
         asset_purchase = AssetPurchase(
             bill_no=bill_no,

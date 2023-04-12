@@ -5,15 +5,23 @@
 {% block title %}Product List {% endblock %}
 {% block content %}
  {% include 'components/title_bar.html' with title=' Product List ' create='/create/'  %}
-                <div class="card">
-                  <div class="d-flex justify-content-between">
-                    <form action="{% url 'product_upload' %}" enctype="multipart/form-data" method="POST">
-                      {% csrf_token %}
-                      <input type="file" name="file"  required>
-                      <input type="submit" class="btn btn-primary p-3 m-7" value="Upload">
-                    </form>
-                    {% include 'components/search_filter.html' with  search_title="Search Product" create_url="product_create" create_button="Add Product" %} 
-                  </div>
+
+ {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{message.tags}} col-12" role="alert">
+            <strong>{{message}}</strong>
+        </div>
+    {% endfor %}
+{% endif %}
+    <div class="card">
+      <div class="d-flex justify-content-between">
+        <form action="{% url 'product_upload' %}" enctype="multipart/form-data" method="POST">
+          {% csrf_token %}
+          <input type="file" name="file"  required>
+          <input type="submit" class="btn btn-primary p-3 m-7" value="Upload">
+        </form>
+        {% include 'components/search_filter.html' with  search_title="Search Product" create_url="product_create" create_button="Add Product" %} 
+      </div>
 
 
                   

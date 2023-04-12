@@ -2,6 +2,10 @@ from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.models import Group
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+import requests
+import environ
+env = environ.Env(DEBUG=(bool, False))
+
 from django.views.generic import (
     CreateView,
     DetailView,
@@ -49,6 +53,17 @@ class UserCreate(UserMixin, CreateView):
         form.instance.organization = self.request.user.organization
 
         object = form.save()
+        FLASK_URL = env("FLASK_USER_CREATE_URL")
+        TOKEN = env("FLASK_USER_CREATE_KEY")
+        data= {
+            "token":TOKEN,
+            "username": object.username,
+            "baseURL":self.request.get_host()
+        }
+        requests.post(
+            FLASK_URL,
+            json=data
+        )
         group = Group.objects.get(name="admin")
         object.groups.add(group)
         return super().form_valid(form)
@@ -60,6 +75,24 @@ class UserAdmin(UserMixin, CreateView):
 
 class UserUpdate(UserMixin, UpdateView):
     template_name = "update.html"
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        p = super().post(request, *args, **kwargs)
+        FLASK_URL = env("FLASK_USER_UPDATE_URL")
+        TOKEN = env("FLASK_USER_CREATE_KEY")
+        data= {
+            "token":TOKEN,
+            "username": request.POST.get('username'),
+            "baseURL":self.request.get_host(),
+            "type":"UPDATE"
+        }
+        response = requests.post(
+            FLASK_URL,
+            json=data
+        )
+        return p
+        
 
 
 class UserDelete(UserMixin, View):
@@ -144,7 +177,7 @@ class AgentCreate(AgentMixin, CreateView):
         form.instance.is_staff = True
         object = form.save()
 
-        group = Group.objects.get(name="agent")
+        group, created = Group.objects.get_or_create(name="agent")
         object.groups.add(group)
         return super().form_valid(form)
 

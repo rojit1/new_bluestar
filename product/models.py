@@ -10,7 +10,7 @@ from user.models import Customer
 
 class ProductCategory(BaseModel):
     title = models.CharField(max_length=255, verbose_name="Category Title")
-    slug = models.SlugField(unique=True, verbose_name="Category Slug")
+    slug = models.SlugField(verbose_name="Category Slug")
     description = models.TextField(
         verbose_name="Category Description", null=True, blank=True
     )
@@ -21,7 +21,7 @@ class ProductCategory(BaseModel):
 
 class Product(BaseModel):
     title = models.CharField(max_length=255, verbose_name="Product Name")
-    slug = models.SlugField(unique=True, verbose_name="Product Slug")
+    slug = models.SlugField(verbose_name="Product Slug")
     description = models.TextField(
         null=True, blank=True, verbose_name="Product Description"
     )
@@ -37,7 +37,7 @@ class Product(BaseModel):
     barcode = models.CharField(null=True, max_length=100, blank=True)
 
     def __str__(self):
-        return f"{self.title}"
+        return f"{self.title} - {self.category.title}"
 
 
 class ProductStock(BaseModel):

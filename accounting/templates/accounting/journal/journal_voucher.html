@@ -1,6 +1,6 @@
 {%extends 'base.html'%}
 {% block pagetitle %}Journal Voucher {% endblock %}
-
+{% load humanize %}
 {% block title %}Journal Voucher {% endblock %}
 
 {% block content %}
@@ -17,6 +17,9 @@
     input:focus {
         border-color: rgb(71, 46, 214);
 
+    }
+    td{
+        letter-spacing: 1px;
     }
 </style>
 
@@ -47,7 +50,7 @@
                                     <td>{{dr.ledger.ledger_name}}</td>
                                     <td class="col-md-5">{{dr.particulars}}</td>
                                     <td></td>
-                                    <td class="col-md-2">{{dr.debit_amount}}</td>
+                                    <td class="col-md-2">{{dr.debit_amount| intcomma}}</td>
                                     <td class="col-md-2">------</td>
                                 </tr>
                                 {% endfor %}
@@ -60,7 +63,7 @@
                                     <td class="col-md-5">{{cr.particulars}}</td>
                                     <td></td>
                                     <td class="col-md-2">-------</td>
-                                    <td class="col-md-2">{{cr.credit_amount}}</td>
+                                    <td class="col-md-2">{{cr.credit_amount| intcomma}}</td>
                                 </tr>
                                 {% endfor %}
 
@@ -68,8 +71,8 @@
                                     <td class="text-primary">Total</td>
                                     <td class="col-md-5"></td>
                                     <td></td>
-                                    <td class="col-md-2 fw-bolder text-primary" id="total-debit">{{dr_total}}</td>
-                                    <td class="col-md-2 fw-bolder text-primary" id="total-credit">{{cr_total}}</td>                        
+                                    <td class="col-md-2 fw-bolder text-primary" id="total-debit">{{dr_total| intcomma}}</td>
+                                    <td class="col-md-2 fw-bolder text-primary" id="total-credit">{{cr_total| intcomma}}</td>                        
                                 </tr>
                             </div>
                     </tbody>

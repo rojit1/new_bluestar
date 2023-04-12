@@ -282,8 +282,8 @@ class ProfitAndLoss(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        expenses = AccountLedger.objects.filter(account_chart__account_type="Expense")
-        revenues = AccountLedger.objects.filter(account_chart__account_type="Revenue")
+        expenses = AccountLedger.objects.filter(account_chart__account_type="Expense", total_value__gt=0)
+        revenues = AccountLedger.objects.filter(account_chart__account_type="Revenue", total_value__gt=0)
 
         revenue_list= []
         revenue_total = 0

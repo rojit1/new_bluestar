@@ -52,7 +52,7 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
 
 
     field_order = [ 'bill_no', 'bill_date', 'pp_no', 'vendor', 'product', 'sub_total', 'discount_percentage', 'discount_amount', 'taxable_amount',
-                'non_taxable_amount', 'tax_amount', 'grand_total', 'amount_in_words', 'payment_mode']
+                'non_taxable_amount', 'tax_amount', 'grand_total', 'amount_in_words', 'payment_mode', 'debit_account']
 
 
 
@@ -66,7 +66,13 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
         self.fields["tax_amount"].label = "VAT Amount"
         self.fields["discount_amount"].widget.attrs["readonly"] = True
         self.fields["amount_in_words"].widget.attrs["readonly"] = True
-
+        self.fields["debit_account"] = forms.ModelChoiceField( queryset=AccountLedger.objects.filter(account_chart=AccountChart.objects.filter(group="Purchase").first()))
+        self.fields["debit_account"].widget.attrs = {
+            "tags":True,
+            "class":"form-select",
+            "data-control": "select2",
+            "data-placeholder": "Select Account",
+        }
 
     class Meta:
         model = ProductPurchase

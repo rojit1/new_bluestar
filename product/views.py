@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-
+from django.contrib import messages
 
 from django.urls import reverse_lazy
 from django.views.generic import (
@@ -181,10 +181,37 @@ class ProductStockDelete(ProductStockMixin, DeleteMixin, View):
 
 
 from openpyxl import load_workbook
+from django.conf import settings
+
 
 class ProductUpload(View):
 
-
     def post(self, request):
         file = request.FILES['file']
+        wb = load_workbook(file)
+        try:
+            worksheet = wb["Sheet1"]
+        except Exception:
+            messages.error(request, "Please include product details in ' sheet1 ' ")
+            return redirect(reverse_lazy('product_list'))
+        excel_data = list()
+        for row in worksheet.iter_rows():
+            row_data = list()
+            for cell in row:
+                row_data.append(str(cell.value))
+            excel_data.append(row_data)
+        
+        for data in excel_data:
+            if ProductCategory.objects.filter(title=data[0]).exists():
+                category = ProductCategory.objects.get(title=data[0])
+            else:
+                category = ProductCategory.objects.create(title=data[0])
+            if not Product.objects.filter(title=data[1], category=category).exists():
+                try:
+                    taxable = True if data[4]=="yes" else False
+                    Product.objects.create(category=category, title=data[1],price=float(data[2]), unit=data[3], is_taxable=taxable)
+                except Exception:
+                    print(Exception)
+    
+        messages.success(request, "Products uploaded successfully")
         return redirect(reverse_lazy('product_list'))
