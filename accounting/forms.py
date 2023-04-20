@@ -1,15 +1,11 @@
 from django import forms
 from root.forms import BaseForm
-from .models import AccountChart, TblDrJournalEntry, TblCrJournalEntry, TblJournalEntry, AccountSubLedger
-from django.contrib.admin.widgets import FilteredSelectMultiple
+from .models import AccountChart, AccountLedger, TblDrJournalEntry, TblCrJournalEntry, AccountSubLedger, Expense
 
 class AccountChartForm(BaseForm, forms.ModelForm):
     class Meta:
         model = AccountChart
         exclude = 'is_editable',
-
-
-from .models import AccountLedger
 
 class AccountLedgerForm(BaseForm, forms.ModelForm):
     
@@ -22,6 +18,34 @@ class AccountSubLedgerForm(BaseForm, forms.ModelForm):
     class Meta:
         model = AccountSubLedger
         exclude = 'is_editable', "total_value"
+
+
+class ExpenseForm(BaseForm, forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["credit_ledger"] = forms.ModelChoiceField( queryset=AccountLedger.objects.filter(account_chart=AccountChart.objects.filter(group="Liquid Asset").first()))
+        self.fields["ledger"] = forms.ModelChoiceField( queryset=AccountLedger.objects.filter(account_chart__in=AccountChart.objects.filter(account_type="Expense")))
+        self.fields["sub_ledger"] = forms.ModelChoiceField(queryset=AccountSubLedger.objects.filter(ledger__in=AccountLedger.objects.filter(account_chart__in=AccountChart.objects.filter(account_type="Expense"))))
+
+        self.fields["credit_ledger"].widget.attrs = {
+            "class":"form-select",
+            "data-control": "select2",
+            "data-placeholder": "Paid From",
+        }
+        self.fields["ledger"].widget.attrs = {
+            "class":"form-select",
+            "data-control": "select2",
+            "data-placeholder": "Expense from",
+        }
+        self.fields["sub_ledger"].widget.attrs = {
+            "class":"form-select",
+            "data-control": "select2",
+            "data-placeholder": "Select Sub Ledger",
+        }
 
 
 class DrJournalEntryForm(BaseForm, forms.ModelForm):

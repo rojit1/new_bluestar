@@ -46,6 +46,7 @@
                           <tr>
                             <th class="w-80px">Remove</th>
                             <th class="min-w-175px">Name</th>
+                            <th class="w-95px">Depn Pool</th>
                             <th class="w-85px">Rate</th>
                             <th class="min-w-100px">Quantity</th>
                             <th class="w-85px">Taxable</th>
@@ -113,6 +114,14 @@
 <script type="text/javascript">
 
   const selectedItems = [];
+  let depreciationPool = []
+  $.ajax({
+        url: `{% settings_value "HOST_URL" %}/api/get-depreciation-pool/`,
+        type: 'GET',
+        success: function(res) {
+          depreciationPool =  res.data
+        }
+      })
 
 $(document).ready(function() {
    $('#id_').focus();
@@ -222,6 +231,19 @@ $(document).ready(function() {
   function createBillItemAfterSelected(id, title, is_taxable=true){
     let quantity = 1
     let total = 0
+    console.log(depreciationPool)
+    let selectElement = document.createElement('select')
+    selectElement.setAttribute('name', `id_depn_${id}`)
+    selectElement.setAttribute('class', 'form-control')
+
+    console.log(typeof depreciationPool)
+    depreciationPool.forEach(i =>{
+      let optionElement = document.createElement('option')
+      optionElement.value = i.id
+      optionElement.text= `${i.label} - ${i.percentage}% `
+      selectElement.appendChild(optionElement)
+    })
+
     return `<tr data-kt-pos-element="item" id="id_bill_item_${id}">
                   <td class="pe-0">
                     <div class="d-flex align-items-center">
@@ -233,6 +255,11 @@ $(document).ready(function() {
                   <td class="pe-0">
                     <div class="d-flex align-items-center">
                       <span class="fw-bold text-gray-800 cursor-pointer text-hover-primary fs-6 me-1" id="id_title_${id}">${title}</span>
+                    </div>
+                  </td>
+                  <td class="pe-0">
+                    <div class="d-flex align-items-center">
+                      ${selectElement.outerHTML}
                     </div>
                   </td>
                   <td class="pe-0">

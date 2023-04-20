@@ -89,7 +89,7 @@
                                         <option value="------" selected>-----</option>
                                         {% for sub in sub_ledgers%}
                                         <option data-ledgerid="{{sub.ledger.pk}}" value={{sub.id}}>
-                                            {{sub.sub_ledger_name}}</option>
+                                            {{sube}}</option>
                                         {% endfor %}
                                     </select>
                                 </td>
@@ -117,7 +117,7 @@
                                         name="credit_subledger">
                                         <option value="------" selected>-----</option>
                                         {% for sub in sub_ledgers%}
-                                        <option value={{sub.id}}>{{sub.sub_ledger_name}}</option>
+                                        <option value={{sub.id}}>{{sub}}</option>
                                         {% endfor %}
                                     </select>
                                 </td>

@@ -1,5 +1,5 @@
 from ..views.accounting import update_account_type ,update_account_group, update_account_ledger, update_account_subledger,\
-    ChartOfAccountAPIView, JournalEntryAPIView, TrialBalanceAPIView, ProfitAndLossAPIView, BalanceSheetAPIView
+    ChartOfAccountAPIView, JournalEntryAPIView, TrialBalanceAPIView, ProfitAndLossAPIView, BalanceSheetAPIView, get_depreciation_pool
 
 from django.urls import path
 
@@ -8,6 +8,8 @@ urlpatterns = [
     path("update-account-group/<int:pk>/", update_account_group, name="update_account_group"),
     path("update-account-ledger/<int:pk>/", update_account_ledger, name="update_account_ledger"),
     path("update-account-subledger/<int:pk>/", update_account_subledger, name="update_account_subledger"),
+    path("get-depreciation-pool/", get_depreciation_pool),
+
 
 
     path('accounting/chart-of-accounts/', ChartOfAccountAPIView.as_view(), name="chart_of_account_list"),

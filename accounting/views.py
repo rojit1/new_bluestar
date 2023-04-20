@@ -90,10 +90,33 @@ class AccountSubLedgerCreate(CreateView):
     form_class = AccountSubLedgerForm
     success_url = reverse_lazy('accountchart_list')
 
+from .models import Expense
+from .forms import ExpenseForm
+class ExpenseMixin:
+    model = Expense
+    form_class = ExpenseForm
+    paginate_by = 10
+    queryset = Expense.objects.all()
+    success_url = reverse_lazy('expenses_list')
+
+class ExpenseList(ExpenseMixin, ListView):
+    template_name = "accounting/expenses/expenses_list.html"
+
+class ExpenseDetail(ExpenseMixin, DetailView):
+    template_name = "expense/expense_detail.html"
+
+class ExpenseCreate(ExpenseMixin, CreateView):
+    template_name = "accounting/expenses/expenses_create.html"
+
+class ExpenseUpdate(ExpenseMixin, UpdateView):
+    template_name = "update.html"
+
+class ExpenseDelete(ExpenseMixin, DeleteMixin, View):
+    pass
+
 
 
 from .models import TblDrJournalEntry, TblCrJournalEntry, TblJournalEntry, AccountSubLedger
-from .forms import JournalEntryForm
 
 class JournalEntryCreateView(View):
 
@@ -250,23 +273,23 @@ class TrialBalanceView(View):
                     data['credit'] = '-'
             trial_balance.append(data)
 
-        vat_receivable, vat_payable = 0, 0
-        for data in trial_balance:
-            if data['ledger'] == 'VAT Receivable':
-                vat_receivable = data['debit']
-                total['debit_total'] -= data['debit']
-                trial_balance.remove(data)
-            if data['ledger'] == 'VAT Payable':
-                vat_payable = data['credit']
-                total['credit_total'] -= data['credit']
-                trial_balance.remove(data)
-        vat_amount = vat_receivable - vat_payable
-        if vat_amount > 0:
-            trial_balance.append({'ledger':'VAT', 'account_head':'Asset', 'debit':vat_amount, 'credit':'-'})
-            total['debit_total'] += vat_amount
-        elif vat_amount < 0:
-            trial_balance.append({'ledger':'VAT', 'account_head':'Liability', 'debit':'-', 'credit':abs(vat_amount)})
-            total['credit_total'] += abs(vat_amount)
+        # vat_receivable, vat_payable = 0, 0
+        # for data in trial_balance:
+        #     if data['ledger'] == 'VAT Receivable':
+        #         vat_receivable = data['debit']
+        #         total['debit_total'] -= data['debit']
+        #         trial_balance.remove(data)
+        #     if data['ledger'] == 'VAT Payable':
+        #         vat_payable = data['credit']
+        #         total['credit_total'] -= data['credit']
+        #         trial_balance.remove(data)
+        # vat_amount = vat_receivable - vat_payable
+        # if vat_amount > 0:
+        #     trial_balance.append({'ledger':'VAT', 'account_head':'Asset', 'debit':vat_amount, 'credit':'-'})
+        #     total['debit_total'] += vat_amount
+        # elif vat_amount < 0:
+        #     trial_balance.append({'ledger':'VAT', 'account_head':'Liability', 'debit':'-', 'credit':abs(vat_amount)})
+        #     total['credit_total'] += abs(vat_amount)
 
         trial_balance = sorted(trial_balance, key=lambda x:x['account_head'])
         context = {

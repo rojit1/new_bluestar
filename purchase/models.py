@@ -2,6 +2,7 @@ from django.db import models
 from root.utils import BaseModel
 from product.models import Product, ProductStock
 from django.db.models.signals import post_save
+from accounting.models import DepreciationPool
 
 class Vendor(BaseModel):
     name = models.CharField(max_length=50)
@@ -31,6 +32,15 @@ class Purchase(BaseModel):
     def __str__(self):
         return f'Purchased from {self.vendor.name} total = {self.grand_total}'
 
+class AccountProductTracking(BaseModel):
+    product = models.ForeignKey(Product,on_delete=models.CASCADE)
+    purchase_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.IntegerField()
+    available = models.BooleanField(default=True)
+    remaining_stock = models.IntegerField()
+
+    def __str__(self):
+        return f'{self.product.title} @ {self.purchase_rate}'
 
 
 class ProductPurchase(BaseModel):
@@ -49,6 +59,9 @@ def update_stock(sender, instance, **kwargs):
     stock = ProductStock.objects.get(product=instance.product)
     stock.stock_quantity = stock.stock_quantity + instance.quantity
     stock.save()
+    # Create Account product tracking after purchase 
+    AccountProductTracking.objects.create(product=instance.product, purchase_rate=instance.rate, quantity=instance.quantity, remaining_stock=instance.quantity)
+   
 
 post_save.connect(update_stock, sender=ProductPurchase)
 
@@ -100,6 +113,7 @@ class Asset(BaseModel):
     title = models.CharField(max_length=50, unique=True)
     description = models.TextField(null=True, blank=True)
     is_taxable = models.BooleanField(default=True)
+    depreciation_pool = models.ForeignKey(DepreciationPool, on_delete=models.SET_NULL, null=True)
     asset_purchases = models.ManyToManyField('AssetPurchase', through='AssetPurchaseItem')
 
     def __str__(self):
@@ -154,5 +168,7 @@ class AssetPurchaseItem(BaseModel):
 
     def __str__(self):
         return f'{self.product.title} X {self.quantity}'
+
+
 
 

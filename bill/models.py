@@ -1,16 +1,16 @@
 from datetime import datetime
-import black
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 
-from django.shortcuts import get_object_or_404
 
 from django.db import models
 from django.dispatch import receiver
-from django.forms import FloatField
 from organization.models import Organization
 from product.models import Product, ProductStock
 from root.utils import BaseModel
 from django.db.models.signals import post_save
+from .utils import product_sold
+
 
 User = get_user_model()
 
@@ -139,11 +139,12 @@ def update_stock(sender, instance, **kwargs):
         stock.save()
     except Exception as e:
         print(e)
+    product_sold(instance=instance)
+    
 
 post_save.connect(update_stock, sender=BillItem)
 
-"""  **************************************** """
-
+""" **************************************** """
 
 class Bill(BaseModel):
     fiscal_year = models.CharField(max_length=20, null=True)
@@ -191,7 +192,6 @@ def create_invoice_number(sender, instance, created, **kwargs):
     current_fiscal_year = Organization.objects.last().current_fiscal_year
 
     if created:
-
         """
         Accounting Section to create Journals after Bill Create
         """

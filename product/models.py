@@ -48,7 +48,6 @@ class ProductStock(BaseModel):
         return f'{self.product.title} -> {self.stock_quantity}'
 
 
-
 ''' Signal to create ProductStock after Product instance is created '''
 
 
@@ -62,6 +61,9 @@ post_save.connect(create_stock, sender=Product)
 
 
 """      ***********************       """
+
+
+
 
 from django.contrib.auth import get_user_model
 

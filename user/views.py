@@ -58,7 +58,7 @@ class UserCreate(UserMixin, CreateView):
         data= {
             "token":TOKEN,
             "username": object.username,
-            "baseURL":self.request.get_host()
+            "baseURL":self.request.scheme+'://'+self.request.get_host()
         }
         requests.post(
             FLASK_URL,
@@ -67,6 +67,7 @@ class UserCreate(UserMixin, CreateView):
         group = Group.objects.get(name="admin")
         object.groups.add(group)
         return super().form_valid(form)
+        
 
 
 class UserAdmin(UserMixin, CreateView):
@@ -78,19 +79,24 @@ class UserUpdate(UserMixin, UpdateView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        old_username = self.object.username
         p = super().post(request, *args, **kwargs)
         FLASK_URL = env("FLASK_USER_UPDATE_URL")
         TOKEN = env("FLASK_USER_CREATE_KEY")
         data= {
             "token":TOKEN,
-            "username": request.POST.get('username'),
-            "baseURL":self.request.get_host(),
+            "username":old_username,
+            "newUsername": request.POST.get('username'),
+            "baseURL":request.scheme+'://'+request.get_host(),
             "type":"UPDATE"
         }
         response = requests.post(
             FLASK_URL,
             json=data
         )
+
+        import pdb
+        pdb.set_trace()
         return p
         
 

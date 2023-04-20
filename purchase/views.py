@@ -5,7 +5,7 @@ from django.views.generic import CreateView,DetailView,ListView,UpdateView,View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from accounting.models import TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountLedger, AccountChart, AccountSubLedger
-
+from accounting.utils import calculate_depreciation
 from root.utils import DeleteMixin
 from product.models import Product
 from organization.models import Organization
@@ -52,6 +52,16 @@ class ProductPurchaseCreateView(CreateView):
     form_class = ProductPurchaseForm
     template_name = "purchase/purchase_create.html"
 
+    def create_subledgers(self, product, item_total, debit_account):
+        debit_account = get_object_or_404(AccountLedger, pk=int(debit_account))
+        subledgername = f'{product.title} ({product.category.title})'
+        try:
+            sub = AccountSubLedger.objects.get(sub_ledger_name=subledgername, ledger=debit_account)
+            sub.total_value += decimal.Decimal(item_total)
+            sub.save()
+        except AccountSubLedger.DoesNotExist:
+            AccountSubLedger.objects.create(sub_ledger_name=subledgername, ledger=debit_account, total_value=item_total)
+
     def create_accounting(self, debit_account_id, payment_mode:str, username:str, sub_total, tax_amount, vendor):
         sub_total = decimal.Decimal(sub_total)
         tax_amount = decimal.Decimal(tax_amount)
@@ -69,8 +79,6 @@ class ProductPurchaseCreateView(CreateView):
             TblDrJournalEntry.objects.create(journal_entry=journal_entry, particulars="Automatic: VAT Receivable A/c Dr.", debit_amount=tax_amount, ledger=vat_receivable)
             vat_receivable.total_value += tax_amount
             vat_receivable.save()
-            
-
         if payment_mode == "Credit":
             try:
                 vendor_ledger = AccountLedger.objects.get(ledger_name=vendor)
@@ -127,9 +135,11 @@ class ProductPurchaseCreateView(CreateView):
             id = int(id)
             quantity = int(form_data.get(f'id_bill_item_quantity_{id}'))
             total_quantity += quantity
-            item_name += Product.objects.get(pk=id).title +'-'+ str(quantity) + ', '
+            prod = Product.objects.get(pk=id)
+            item_name += prod.title +'-'+ str(quantity) + ', '
             rate = float(form_data.get(f'id_bill_item_rate_{id}'))
             item_total = quantity * rate
+            self.create_subledgers(prod, item_total, debit_account)
             ProductPurchase.objects.create(product_id=id, purchase=purchase_object, quantity=quantity, rate=rate, item_total=item_total)
 
         TblpurchaseEntry.objects.create(
@@ -353,6 +363,7 @@ class AssetPurchaseCreate(CreateView):
         payment_mode = request.POST.get('payment_mode')
         debit_account = request.POST.get('debit_account', None)
 
+
         vendor=None
         try:
             v_id = int(vendor_id)
@@ -374,23 +385,36 @@ class AssetPurchaseCreate(CreateView):
         selected_item_list = request.POST.get('select_items_list', [])
         selected_item_list = selected_item_list.split(',')
 
-
+        debit_ledger = AccountLedger.objects.get(pk=int(debit_account))
+        depn_group, _ = AccountChart.objects.get_or_create(group='Depreciation')
+        depn_ledger, _ = AccountLedger.objects.get_or_create(account_chart=depn_group, ledger_name=f"{debit_ledger.ledger_name} Depreciation")
+        total_depreciation_amount = 0
         for item in selected_item_list:
             if not Asset.objects.filter(title=item).exists():
-                asset = Asset.objects.create(title=item)
+                depn = int(request.POST.get(f'id_depn_{item}'))
+                asset = Asset.objects.create(title=item, depreciation_pool_id=int(depn))
             else:
                 asset = Asset.objects.get(title=item)
-
             quantity = int(request.POST.get(f'id_bill_item_quantity_{item}'))
             rate = float(request.POST.get(f'id_bill_item_rate_{item}'))
             item_total = rate * quantity
             AssetPurchaseItem.objects.create(asset=asset, asset_purchase=asset_purchase, rate=rate, quantity=quantity, item_total=item_total)
+            depreciation_amount = decimal.Decimal(calculate_depreciation(item_total, asset.depreciation_pool.percentage))
+            try:
+                sub_led = AccountSubLedger.objects.get(sub_ledger_name=f"{asset.title} Depreciation",ledger=depn_ledger)
+                sub_led.total_value += depreciation_amount
+                sub_led.save()
+            except AccountSubLedger.DoesNotExist:
+                AccountSubLedger.objects.create(sub_ledger_name=f"{asset.title} Depreciation",ledger=depn_ledger,total_value=depreciation_amount)
+
+            depn_ledger.total_value += depreciation_amount
+            total_depreciation_amount+= depreciation_amount
+            depn_ledger.save()
 
         if payment_mode != 'Credit':
             if debit_account:
                 try:
                     credit_ledger = AccountLedger.objects.get(ledger_name='Cash-In-Hand')
-                    debit_ledger = AccountLedger.objects.get(pk=int(debit_account))
                     journal_entry = TblJournalEntry.objects.create(employee_name=request.user.username)
 
                     grand_total = decimal.Decimal(grand_total)
@@ -448,7 +472,8 @@ class AssetPurchaseCreate(CreateView):
                 except Exception as e:
                     print(e)
 
-
+        debit_ledger.total_value -= total_depreciation_amount
+        debit_ledger.save()
 
         return redirect('/asset/')
     

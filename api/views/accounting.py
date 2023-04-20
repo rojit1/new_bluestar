@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
-from accounting.models import AccountChart, AccountLedger, TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountSubLedger
+from accounting.models import AccountChart, AccountLedger, TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountSubLedger, DepreciationPool
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from api.serializers.accounting import JournalEntryModelSerializer, AccountLedgerSerializer
@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q, Sum
 from django.forms.models import model_to_dict
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from organization.models import Organization
 
 @api_view(['PUT'])
 def update_account_type(request, pk):
@@ -38,11 +39,20 @@ def update_account_subledger(request, pk):
     sub_ledger.save()
     return Response({'Message': 'Successful'})
 
+@api_view(['GET'])
+def get_depreciation_pool(request):
+    data = DepreciationPool.objects.all().values()
+    return Response({'data':data})
+
 
 class ChartOfAccountAPIView(APIView):
     def get(self, request):
-        account_chart = AccountChart.objects.all()
         data = {}
+        org = Organization.objects.all()
+        if org:
+            o = org.first()
+            data['organization'] = {"name":o.org_name, "email":o.company_contact_email, "address": o.company_address}
+        account_chart = AccountChart.objects.all()
         for ac in account_chart:
             if ac.account_type not in data:
                 data[ac.account_type] = {"groups":[]}

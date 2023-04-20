@@ -5,8 +5,8 @@ urlpatterns = [
 path('accountchart/', AccountChartList.as_view(), name='accountchart_list'),
 path('accountchart/<int:pk>/', AccountChartDetail.as_view(), name='accountchart_detail'),
 path('accountchart/create/', AccountChartCreate.as_view(), name='accountchart_create'),
-path('accountchart/<int:pk>/update/', AccountChartUpdate.as_view(), name='accountchart_update'),
-path('accountchart/delete', AccountChartDelete.as_view(), name='accountchart_delete'),
+# path('accountchart/<int:pk>/update/', AccountChartUpdate.as_view(), name='accountchart_update'),
+# path('accountchart/delete', AccountChartDelete.as_view(), name='accountchart_delete'),
 ]
 
 from .views import AccountLedgerList,AccountLedgerDetail,AccountLedgerCreate,AccountLedgerUpdate,AccountLedgerDelete
@@ -14,13 +14,22 @@ urlpatterns += [
 path('accountledger/', AccountChartList.as_view(), name='accountledger_list'),
 path('accountledger/<int:pk>/', AccountLedgerDetail.as_view(), name='accountledger_detail'),
 path('accountledger/create/', AccountLedgerCreate.as_view(), name='accountledger_create'),
-path('accountledger/<int:pk>/update/', AccountLedgerUpdate.as_view(), name='accountledger_update'),
-path('accountledger/delete', AccountLedgerDelete.as_view(), name='accountledger_delete'),
+# path('accountledger/<int:pk>/update/', AccountLedgerUpdate.as_view(), name='accountledger_update'),
+# path('accountledger/delete', AccountLedgerDelete.as_view(), name='accountledger_delete'),
 ]
 
 from .views import AccountSubLedgerCreate
 urlpatterns += [
     path('accountsubledger/create/', AccountSubLedgerCreate.as_view(), name="subledger_create")
+]
+
+from .views import ExpenseList,ExpenseDetail,ExpenseCreate,ExpenseUpdate,ExpenseDelete
+urlpatterns += [
+    path('expenses/', ExpenseList.as_view(), name='expenses_list'),
+    path('expenses/<int:pk>/', ExpenseDetail.as_view(), name='expenses_detail'),
+    path('expenses/create/', ExpenseCreate.as_view(), name='expenses_create'),
+    # path('expense/<int:pk>/update/', ExpenseUpdate.as_view(), name='expense_update'),
+    # path('expense/delete', ExpenseDelete.as_view(), name='expense_delete'),
 ]
 
 from .views import JournalEntryCreateView, JournalEntryView,  TrialBalanceView, ProfitAndLoss, BalanceSheet
