@@ -1,6 +1,7 @@
 from django import forms
 from root.forms import BaseForm
 from .models import AccountChart, AccountLedger, TblDrJournalEntry, TblCrJournalEntry, AccountSubLedger, Expense
+from django.db.models import Q
 
 class AccountChartForm(BaseForm, forms.ModelForm):
     class Meta:
@@ -28,8 +29,8 @@ class ExpenseForm(BaseForm, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["credit_ledger"] = forms.ModelChoiceField( queryset=AccountLedger.objects.filter(account_chart=AccountChart.objects.filter(group="Liquid Asset").first()))
-        self.fields["ledger"] = forms.ModelChoiceField( queryset=AccountLedger.objects.filter(account_chart__in=AccountChart.objects.filter(account_type="Expense")))
-        self.fields["sub_ledger"] = forms.ModelChoiceField(queryset=AccountSubLedger.objects.filter(ledger__in=AccountLedger.objects.filter(account_chart__in=AccountChart.objects.filter(account_type="Expense"))))
+        self.fields["ledger"] = forms.ModelChoiceField( queryset=AccountLedger.objects.filter(~Q(ledger_name='Inventory Expenses'), account_chart__in=AccountChart.objects.filter(account_type="Expense")))
+        self.fields["sub_ledger"] = forms.ModelChoiceField(queryset=AccountSubLedger.objects.filter(~Q(ledger__ledger_name='Inventory Expenses'),ledger__in=AccountLedger.objects.filter(account_chart__in=AccountChart.objects.filter(account_type="Expense"))))
 
         self.fields["credit_ledger"].widget.attrs = {
             "class":"form-select",

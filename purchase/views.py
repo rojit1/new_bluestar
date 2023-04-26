@@ -4,7 +4,7 @@ from django.db.models import Sum
 from django.views.generic import CreateView,DetailView,ListView,UpdateView,View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
-from accounting.models import TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountLedger, AccountChart, AccountSubLedger
+from accounting.models import TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountLedger, AccountChart, AccountSubLedger, Depreciation
 from accounting.utils import calculate_depreciation
 from root.utils import DeleteMixin
 from product.models import Product
@@ -398,8 +398,13 @@ class AssetPurchaseCreate(CreateView):
             quantity = int(request.POST.get(f'id_bill_item_quantity_{item}'))
             rate = float(request.POST.get(f'id_bill_item_rate_{item}'))
             item_total = rate * quantity
-            AssetPurchaseItem.objects.create(asset=asset, asset_purchase=asset_purchase, rate=rate, quantity=quantity, item_total=item_total)
-            depreciation_amount = decimal.Decimal(calculate_depreciation(item_total, asset.depreciation_pool.percentage))
+            item_purchased = AssetPurchaseItem.objects.create(asset=asset, asset_purchase=asset_purchase, rate=rate, quantity=quantity, item_total=item_total)
+
+            depreciation_amount, miti = calculate_depreciation(item_total, asset.depreciation_pool.percentage, bill_date)
+            depreciation_amount = decimal.Decimal(depreciation_amount)
+            net_amount = decimal.Decimal(item_total)-depreciation_amount
+            Depreciation.objects.create(item=item_purchased, miti=miti, depreciation_amount=depreciation_amount, net_amount=net_amount)
+
             try:
                 sub_led = AccountSubLedger.objects.get(sub_ledger_name=f"{asset.title} Depreciation",ledger=depn_ledger)
                 sub_led.total_value += depreciation_amount
@@ -427,7 +432,6 @@ class AssetPurchaseCreate(CreateView):
                         vat_receivable.total_value += tax_amt
                         vat_receivable.save()
                         TblDrJournalEntry.objects.create(ledger=vat_receivable, journal_entry=journal_entry, particulars=f'Vat receivable from {bill_no}', debit_amount=tax_amt)
-
 
                     TblDrJournalEntry.objects.create(ledger=debit_ledger, journal_entry=journal_entry, particulars=f'Debit from bill {bill_no}', debit_amount=total_debit_amt)
                     debit_ledger.total_value += total_debit_amt
@@ -461,7 +465,6 @@ class AssetPurchaseCreate(CreateView):
                         vat_receivable.total_value += tax_amt
                         vat_receivable.save()
                         TblDrJournalEntry.objects.create(ledger=vat_receivable, journal_entry=journal_entry, particulars=f'Vat receivable from {bill_no}', debit_amount=tax_amt)
-
 
                     TblDrJournalEntry.objects.create(ledger=debit_ledger, journal_entry=journal_entry, particulars=f'Debit from bill {bill_no}', debit_amount=total_debit_amt)
                     debit_ledger.total_value += total_debit_amt

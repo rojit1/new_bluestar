@@ -1,7 +1,8 @@
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
-from accounting.models import AccountChart, AccountLedger, TblCrJournalEntry, TblDrJournalEntry, TblJournalEntry, AccountSubLedger, DepreciationPool
+from accounting.models import AccountChart, AccountLedger,TblJournalEntry, AccountSubLedger
+from purchase.models import DepreciationPool
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from api.serializers.accounting import JournalEntryModelSerializer, AccountLedgerSerializer
@@ -69,6 +70,18 @@ class JournalEntryAPIView(ListAPIView):
     queryset = TblJournalEntry.objects.all()
     serializer_class = JournalEntryModelSerializer
 
+    def list(self, request, *args, **kwargs):
+        from_date = self.request.query_params.get('fromDate')
+        to_date = self.request.query_params.get('toDate')
+        if from_date and to_date:
+            queryset = TblJournalEntry.objects.filter(created_at__range=[from_date, to_date])
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data)
+        else:
+            queryset = TblJournalEntry.objects.all()
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data)
+
 
 class TrialBalanceAPIView(APIView):
 
@@ -80,7 +93,7 @@ class TrialBalanceAPIView(APIView):
         ledgers = AccountLedger.objects.filter(total_value__gt=0)
         for led in ledgers:
             data = {}
-            data['account']=led.ledger_name
+            data['ledger']=led.ledger_name
             account_type = led.account_chart.account_type
             data['account_head']=account_type
 
@@ -103,6 +116,25 @@ class TrialBalanceAPIView(APIView):
                     total['debit_total'] += led.total_value
                     data['credit'] = '-'
             trial_balance.append(data)
+
+        vat_receivable, vat_payable = 0, 0
+        for data in trial_balance:
+            if data['ledger'] == 'VAT Receivable':
+                vat_receivable = data['debit']
+                total['debit_total'] -= data['debit']
+                trial_balance.remove(data)
+            if data['ledger'] == 'VAT Payable':
+                vat_payable = data['credit']
+                total['credit_total'] -= data['credit']
+                trial_balance.remove(data)
+        vat_amount = vat_receivable - vat_payable
+        if vat_amount > 0:
+            trial_balance.append({'ledger':'VAT', 'account_head':'Asset', 'debit':vat_amount, 'credit':'-'})
+            total['debit_total'] += vat_amount
+        elif vat_amount < 0:
+            trial_balance.append({'ledger':'VAT', 'account_head':'Liability', 'debit':'-', 'credit':abs(vat_amount)})
+            total['credit_total'] += abs(vat_amount)
+
         trial_balance = sorted(trial_balance, key=lambda x:x['account_head'])
         context = {
             'trial_balance': trial_balance,

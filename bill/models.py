@@ -195,7 +195,10 @@ def create_invoice_number(sender, instance, created, **kwargs):
         """
         Accounting Section to create Journals after Bill Create
         """
-        create_journal_for_bill(instance)
+        try:
+            create_journal_for_bill(instance)
+        except Exception as e:
+            pass
         # ___________________________________
 
         branch = instance.branch.branch_code

@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView,DetailView,ListView,TemplateView,UpdateView,View
 from root.utils import DeleteMixin
-from .models import AccountChart
+from .models import AccountChart, Depreciation
 from django.views.generic import TemplateView
 from .forms import AccountChartForm
 from decimal import Decimal as D
@@ -217,6 +217,38 @@ class JournalEntryCreateView(View):
 class JournalEntryView(View):
 
     def get(self, request, pk=None):
+        from_date = request.GET.get('fromDate', None)
+        to_date = request.GET.get('toDate', None)
+
+        if from_date and to_date and (to_date > from_date):
+            journals = TblJournalEntry.objects.filter(created_at__range=[from_date, to_date])
+
+            journal_entries = {
+                'entries': [],
+                "debit_sum": 0,
+                "credit_sum": 0
+            }
+            debit_sum, credit_sum = 0,0
+            for journal in journals:
+                data = {'dr':[], 'cr':[], "dr_total": 0, "cr_total": 0}
+                for dr in journal.tbldrjournalentry_set.all():
+                    data['dr'].append(dr)
+                    data['dr_total'] += dr.debit_amount
+                for cr in journal.tblcrjournalentry_set.all():
+                    data['cr'].append(cr)
+                    data['cr_total'] += cr.credit_amount
+                journal_entries['entries'].append(data)
+                journal_entries['debit_sum']+=data['dr_total']
+                journal_entries['credit_sum']+=data['cr_total']
+
+
+            context = {
+                'from_date':from_date,
+                'to_date': to_date,
+                'journals':journal_entries
+            }
+
+            return render(request,'accounting/journal/journal.html' , context=context)
         if pk:
             journal = TblJournalEntry.objects.get(pk=pk)
             credit_details = TblCrJournalEntry.objects.filter(journal_entry=journal)
@@ -239,6 +271,9 @@ class JournalEntryView(View):
 
         journal_entries = TblJournalEntry.objects.prefetch_related('tbldrjournalentry_set').all()
         return render(request, 'accounting/journal/journal_list.html',  {'journal_entries': journal_entries})
+
+
+
 
 
 class TrialBalanceView(View):
@@ -273,23 +308,23 @@ class TrialBalanceView(View):
                     data['credit'] = '-'
             trial_balance.append(data)
 
-        # vat_receivable, vat_payable = 0, 0
-        # for data in trial_balance:
-        #     if data['ledger'] == 'VAT Receivable':
-        #         vat_receivable = data['debit']
-        #         total['debit_total'] -= data['debit']
-        #         trial_balance.remove(data)
-        #     if data['ledger'] == 'VAT Payable':
-        #         vat_payable = data['credit']
-        #         total['credit_total'] -= data['credit']
-        #         trial_balance.remove(data)
-        # vat_amount = vat_receivable - vat_payable
-        # if vat_amount > 0:
-        #     trial_balance.append({'ledger':'VAT', 'account_head':'Asset', 'debit':vat_amount, 'credit':'-'})
-        #     total['debit_total'] += vat_amount
-        # elif vat_amount < 0:
-        #     trial_balance.append({'ledger':'VAT', 'account_head':'Liability', 'debit':'-', 'credit':abs(vat_amount)})
-        #     total['credit_total'] += abs(vat_amount)
+        vat_receivable, vat_payable = 0, 0
+        for data in trial_balance:
+            if data['ledger'] == 'VAT Receivable':
+                vat_receivable = data['debit']
+                total['debit_total'] -= data['debit']
+                trial_balance.remove(data)
+            if data['ledger'] == 'VAT Payable':
+                vat_payable = data['credit']
+                total['credit_total'] -= data['credit']
+                trial_balance.remove(data)
+        vat_amount = vat_receivable - vat_payable
+        if vat_amount > 0:
+            trial_balance.append({'ledger':'VAT', 'account_head':'Asset', 'debit':vat_amount, 'credit':'-'})
+            total['debit_total'] += vat_amount
+        elif vat_amount < 0:
+            trial_balance.append({'ledger':'VAT', 'account_head':'Liability', 'debit':'-', 'credit':abs(vat_amount)})
+            total['credit_total'] += abs(vat_amount)
 
         trial_balance = sorted(trial_balance, key=lambda x:x['account_head'])
         context = {
@@ -372,4 +407,11 @@ class BalanceSheet(TemplateView):
         context['liabilities'] =  liability_dict
 
         return context
-    
+
+
+class DepreciationView(View):
+
+    def get(self, request):
+        depreciations = Depreciation.objects.all()
+        return render(request, 'accounting/depreciation_list.html', {'depreciations':depreciations})
+

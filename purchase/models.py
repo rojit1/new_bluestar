@@ -2,7 +2,6 @@ from django.db import models
 from root.utils import BaseModel
 from product.models import Product, ProductStock
 from django.db.models.signals import post_save
-from accounting.models import DepreciationPool
 
 class Vendor(BaseModel):
     name = models.CharField(max_length=50)
@@ -108,6 +107,12 @@ class TblpurchaseReturn(models.Model):
 
 """ Asset Models  """
 
+class DepreciationPool(models.Model):
+    label = models.CharField(max_length=3)
+    percentage = models.SmallIntegerField()
+
+    def __str__(self):
+        return f'{self.label} - {self.percentage} %'
 
 class Asset(BaseModel):
     title = models.CharField(max_length=50, unique=True)

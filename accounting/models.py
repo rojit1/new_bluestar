@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models.signals import post_save
-from django.dispatch import receiver 
+from django.dispatch import receiver
+from purchase.models import AssetPurchaseItem
 
 class AccountBaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -8,14 +9,6 @@ class AccountBaseModel(models.Model):
 
     class Meta:
         abstract = True
-
-
-class DepreciationPool(models.Model):
-    label = models.CharField(max_length=3)
-    percentage = models.SmallIntegerField()
-
-    def __str__(self):
-        return f'{self.label} - {self.percentage} %'
 
 
 class AccountChart(AccountBaseModel):
@@ -107,7 +100,15 @@ def create_journal_for_expense(sender, instance, **kwargs):
     instance.credit_ledger.save()
 
 
+class Depreciation(AccountBaseModel):
+    item = models.ForeignKey(AssetPurchaseItem, on_delete=models.CASCADE)
+    miti = models.CharField(max_length=15)
+    depreciation_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    net_amount = models.DecimalField(max_digits=10, decimal_places=2)
 
+    def __str__(self):
+        return "Depreciation"
+    
 
 
 
