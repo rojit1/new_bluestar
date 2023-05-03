@@ -22,6 +22,9 @@
       <!--end::Page title-->
       <!--begin::Actions-->
       <div class="d-flex align-items-center py-1">
+         {% if end %}
+            <a class="btn btn-sm btn-primary" id="fiscal-year-end-btn" >End Fiscal Year</a>
+         {% endif %}
          {% if create %}  <a href="create/" class="btn btn-sm btn-primary" >Create</a>
          {% endif %}
          {% if pk %}  <a href="update/" class="btn btn-sm btn-info" >Edit</a>

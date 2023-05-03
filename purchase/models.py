@@ -10,7 +10,7 @@ class Vendor(BaseModel):
     pan_no = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return f'{self.name} - {self.pan_no}'
 
 
 class Purchase(BaseModel):
@@ -172,7 +172,7 @@ class AssetPurchaseItem(BaseModel):
     item_total = models.DecimalField(max_digits=9, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
-        return f'{self.product.title} X {self.quantity}'
+        return f'{self.asset.title} X {self.quantity}'
 
 
 

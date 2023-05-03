@@ -25,7 +25,8 @@ class Organization(SingletonModel, BaseModel):
     )
     website = models.URLField(null=True, blank=True)
     current_fiscal_year = models.CharField(null=True, max_length=20)
-
+    start_year = models.IntegerField()
+    end_year = models.IntegerField()
     # contact details
     company_contact_number = models.CharField(max_length=255, null=True, blank=True)
     company_contact_email = models.EmailField(null=True, blank=True)
@@ -38,10 +39,11 @@ class Organization(SingletonModel, BaseModel):
 
     def __str__(self):
         return self.org_name
+    
+    def get_fiscal_year(self):
+        return f'{self.start_year}-{self.end_year}'
 
 
-import shortuuid
-import six
 
 from uuid import uuid4
 

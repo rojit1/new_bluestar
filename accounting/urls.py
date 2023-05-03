@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import AccountChartList,AccountChartDetail,AccountChartCreate,AccountChartUpdate,AccountChartDelete
+from .views import AccountChartList,AccountChartDetail,AccountChartCreate, end_fiscal_year
 
 urlpatterns = [
 path('accountchart/', AccountChartList.as_view(), name='accountchart_list'),
 path('accountchart/<int:pk>/', AccountChartDetail.as_view(), name='accountchart_detail'),
 path('accountchart/create/', AccountChartCreate.as_view(), name='accountchart_create'),
+path('end-fiscal-year/', end_fiscal_year, name='end_fiscal_year')
 # path('accountchart/<int:pk>/update/', AccountChartUpdate.as_view(), name='accountchart_update'),
 # path('accountchart/delete', AccountChartDelete.as_view(), name='accountchart_delete'),
 ]

@@ -403,7 +403,15 @@ class AssetPurchaseCreate(CreateView):
             depreciation_amount, miti = calculate_depreciation(item_total, asset.depreciation_pool.percentage, bill_date)
             depreciation_amount = decimal.Decimal(depreciation_amount)
             net_amount = decimal.Decimal(item_total)-depreciation_amount
-            Depreciation.objects.create(item=item_purchased, miti=miti, depreciation_amount=depreciation_amount, net_amount=net_amount)
+
+            try:
+                subled = AccountSubLedger.objects.get(sub_ledger_name=f'{asset.title}', ledger=debit_ledger)
+                subled.total_value += net_amount
+                subled.save()
+            except AccountSubLedger.DoesNotExist:
+                AccountSubLedger.objects.create(sub_ledger_name=f'{asset.title}', total_value= net_amount, ledger=debit_ledger)
+
+            Depreciation.objects.create(item=item_purchased, miti=miti, depreciation_amount=depreciation_amount, net_amount=net_amount, ledger=debit_ledger)
 
             try:
                 sub_led = AccountSubLedger.objects.get(sub_ledger_name=f"{asset.title} Depreciation",ledger=depn_ledger)
@@ -439,6 +447,8 @@ class AssetPurchaseCreate(CreateView):
                     TblCrJournalEntry.objects.create(ledger=credit_ledger, journal_entry=journal_entry,particulars=f'Cash cr. from bill {bill_no}', credit_amount=grand_total)
                     credit_ledger.total_value -= grand_total
                     credit_ledger.save()
+                    journal_entry.journal_total = total_debit_amt
+                    journal_entry.save()
                 except Exception as e:
                     print(e)
         else:
@@ -472,6 +482,9 @@ class AssetPurchaseCreate(CreateView):
                     TblCrJournalEntry.objects.create(ledger=credit_ledger, journal_entry=journal_entry,particulars=f'Cash cr. from bill {bill_no}', credit_amount=grand_total)
                     credit_ledger.total_value += grand_total
                     credit_ledger.save()
+
+                    journal_entry.journal_total = grand_total
+                    journal_entry.save()
                 except Exception as e:
                     print(e)
 

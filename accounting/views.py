@@ -2,13 +2,16 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView,DetailView,ListView,TemplateView,UpdateView,View
 from root.utils import DeleteMixin
-from .models import AccountChart, Depreciation
+from .models import AccountChart, Depreciation, FiscalYearLedger, FiscalYearSubLedger
 from django.views.generic import TemplateView
 from .forms import AccountChartForm
 from decimal import Decimal as D
 from django.db.models import Q, Sum
 from django.contrib import messages
-
+from organization.models import Organization
+from rest_framework.response import Response
+from accounting.utils import calculate_depreciation
+from rest_framework.decorators import api_view
 
 class AccountChartMixin:
     model = AccountChart
@@ -414,4 +417,81 @@ class DepreciationView(View):
     def get(self, request):
         depreciations = Depreciation.objects.all()
         return render(request, 'accounting/depreciation_list.html', {'depreciations':depreciations})
+
+
+@api_view(['POST'])
+def end_fiscal_year(request):
+        org = Organization.objects.first()
+        fiscal_year = org.get_fiscal_year()
+        ledgers = AccountLedger.objects.all()
+        sub_ledgers = AccountSubLedger.objects.all()
+        accumulated_depn = AccountLedger.objects.get(ledger_name='Accumulated Depreciation')
+
+
+        for sub in sub_ledgers:
+            FiscalYearSubLedger.objects.create(sub_ledger_name=sub.sub_ledger_name, total_value=sub.total_value, fiscal_year=fiscal_year, ledger=sub.ledger)
+
+        for led in ledgers:
+            FiscalYearLedger.objects.create(ledger_name=led.ledger_name, total_value=led.total_value,fiscal_year=fiscal_year, account_chart=led.account_chart)
+            if led.account_chart.account_type in ['Revenue', 'Expense']:
+                for sub in led.accountsubledger_set.all():
+                    if sub.ledger.account_chart.group == 'Depreciation':
+                        accumulated_depn.total_value += sub.total_value
+                        accumulated_depn.save()
+                    sub.total_value=0
+                    sub.save()
+                if not led.ledger_name == 'Accumulated Depreciation':
+                    led.total_value = 0
+                    led.save()
+                    # AccountSubLedger.objects.create(sub_ledger_name=f'{sub.sub_ledger_name} for {fiscal_year}', total_value=sub.total_value, ledger=accumulated_depn)
+                
+        
+        
+
+        depreciations = Depreciation.objects.filter(fiscal_year=fiscal_year)
+
+        org.start_year+=1
+        org.end_year += 1
+
+        org.save()
+
+        for depn in depreciations:
+            amount = float(depn.net_amount)
+            percentage = depn.item.asset.depreciation_pool.percentage
+            bill_date = depn.item.asset_purchase.bill_date
+            depreciation_amount, bs_date = calculate_depreciation(amount, percentage, bill_date)
+            net_amount = amount-depreciation_amount
+            Depreciation.objects.create(miti=bs_date,depreciation_amount=depreciation_amount, net_amount=net_amount, item=depn.item, ledger=depn.ledger)
+            depreciation_amount = D(depreciation_amount)
+            depn_subledger = AccountSubLedger.objects.get(sub_ledger_name=f'{depn.item.asset.title} Depreciation')
+            depn_subledger.total_value += depreciation_amount
+            depn_subledger.save()
+
+
+            depn_ledger = depn_subledger.ledger
+            depn_ledger.total_value+= depreciation_amount
+            depn_ledger.save()
+
+            asset_ledger = depn.ledger
+            asset_ledger.total_value -= depreciation_amount
+            asset_ledger.save()
+
+            asset_ledger = AccountSubLedger.objects.get(sub_ledger_name=depn.item.asset.title, ledger__account_chart__account_type='Asset')
+            asset_ledger.total_value -= depreciation_amount
+            asset_ledger.save()
+        
+        
+        return Response({})
+
+        
+
+
+
+
+
+
+
+
+
+
 

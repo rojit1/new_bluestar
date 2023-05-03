@@ -40,7 +40,7 @@
 
 </style>
 
-{% include 'components/title_bar.html' with title=' Chart of Acounts ' %}
+{% include 'components/title_bar.html' with title=' Chart of Acounts' end="a" %}
 
 <div class="row">
 
@@ -549,6 +549,39 @@
     }
 
 
+    let fiscalYearBtn = document.getElementById('fiscal-year-end-btn')
+    if(fiscalYearBtn){
+      fiscalYearBtn.addEventListener('click', (e)=>{
+
+        Swal.fire({
+        title: 'Do you want to update fiscal year?',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'YES',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajaxSetup({
+            headers: { "X-CSRFToken": '{{csrf_token}}' }
+          });
+
+          $.ajax({
+            url: `/end-fiscal-year/`,
+            type: 'POST',
+            success: function (result) {
+              Swal.fire({
+              position: 'top-end',
+              icon: 'success',
+              title: 'Fiscal Year has been updated',
+              showConfirmButton: false,
+              timer: 1500
+            })
+            }
+          });
+        }
+      })
+
+      })
+    }
 
   </script>
 
