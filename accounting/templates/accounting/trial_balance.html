@@ -11,7 +11,15 @@
     }
 </style>
 <div class="card">
-
+    {% include 'components/search_filter.html' %}
+    <div class="card-header p-4 m-auto">
+        <center>
+                <h2>Trial Balance</h2> <br>
+                {% if from_date and to_date %}
+                    <p class="fw-bolder">Date: {{from_date}} &nbsp; - &nbsp; {{to_date}}</p>
+                {% endif %}
+        </center>
+    </div>
     <div class="card-body pt-0">
         <div id="kt_customers_table_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
             <div class="table-responsive">

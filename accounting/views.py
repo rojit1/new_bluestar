@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView,DetailView,ListView,TemplateView,UpdateView,View
 from root.utils import DeleteMixin
-from .models import AccountChart, Depreciation, FiscalYearLedger, FiscalYearSubLedger
+from .models import AccountChart, Depreciation, FiscalYearLedger, FiscalYearSubLedger, CumulativeLedger
 from django.views.generic import TemplateView
 from .forms import AccountChartForm
 from decimal import Decimal as D
@@ -276,40 +276,90 @@ class JournalEntryView(View):
         return render(request, 'accounting/journal/journal_list.html',  {'journal_entries': journal_entries})
 
 
-
-
-
 class TrialBalanceView(View):
 
-    def get(self, request):
+    def filtered_view(self, from_date, to_date):
+        ledgers = CumulativeLedger.objects.filter(created_at__range=[from_date, to_date], total_value__gt=0).order_by('-created_at')
+        equity = AccountLedger.objects.filter(account_chart__account_type='Equity')
+        
         trial_balance = []
+        included_ledgers = []
         total = {'debit_total':0, 'credit_total':0}
-        ledgers = AccountLedger.objects.filter(total_value__gt=0)
         for led in ledgers:
             data = {}
-            data['ledger']=led.ledger_name
-            account_type = led.account_chart.account_type
-            data['account_head']=account_type
+            if led.ledger_name not in included_ledgers:
+                included_ledgers.append(led.ledger_name)
+                data['ledger']=led.ledger_name
+                account_type = led.account_chart.account_type
+                data['account_head']=account_type
 
-            if account_type in ['Asset', 'Expense']:
-                if led.total_value > 0:
-                    data['debit'] = led.total_value
-                    total['debit_total'] += led.total_value
-                    data['credit'] = '-'
+                if account_type in ['Asset', 'Expense']:
+                    if led.total_value > 0:
+                        data['debit'] = led.total_value
+                        total['debit_total'] += led.total_value
+                        data['credit'] = '-'
+                    else:
+                        data['credit'] = led.total_value
+                        total['credit_total'] += led.total_value
+                        data['debit'] = '-'
                 else:
-                    data['credit'] = led.total_value
-                    total['credit_total'] += led.total_value
-                    data['debit'] = '-'
-            else:
-                if led.total_value > 0:
-                    data['credit'] = led.total_value
-                    total['credit_total'] += led.total_value
-                    data['debit'] = '-'
+                    if led.total_value > 0:
+                        data['credit'] = led.total_value
+                        total['credit_total'] += led.total_value
+                        data['debit'] = '-'
+                    else:
+                        data['debit'] = led.total_value
+                        total['debit_total'] += led.total_value
+                        data['credit'] = '-'
+                trial_balance.append(data)
+        for eq in equity:
+            if eq.ledger_name not in included_ledgers:
+                trial_balance.append({
+                    'ledger':eq.ledger_name,
+                    'account_head':eq.account_chart.account_type,
+                    'debit':'-',
+                    'credit':eq.total_value
+                })
+                total['credit_total'] += eq.total_value
+        return trial_balance, total
+
+
+    def get(self, request):
+        from_date = request.GET.get('fromDate', None)
+        to_date = request.GET.get('toDate', None)
+
+        if from_date and to_date:
+            trial_balance, total= self.filtered_view(from_date, to_date)
+
+        else:
+            trial_balance = []
+            total = {'debit_total':0, 'credit_total':0}
+            ledgers = AccountLedger.objects.filter(total_value__gt=0)
+            for led in ledgers:
+                data = {}
+                data['ledger']=led.ledger_name
+                account_type = led.account_chart.account_type
+                data['account_head']=account_type
+
+                if account_type in ['Asset', 'Expense']:
+                    if led.total_value > 0:
+                        data['debit'] = led.total_value
+                        total['debit_total'] += led.total_value
+                        data['credit'] = '-'
+                    else:
+                        data['credit'] = led.total_value
+                        total['credit_total'] += led.total_value
+                        data['debit'] = '-'
                 else:
-                    data['debit'] = led.total_value
-                    total['debit_total'] += led.total_value
-                    data['credit'] = '-'
-            trial_balance.append(data)
+                    if led.total_value > 0:
+                        data['credit'] = led.total_value
+                        total['credit_total'] += led.total_value
+                        data['debit'] = '-'
+                    else:
+                        data['debit'] = led.total_value
+                        total['debit_total'] += led.total_value
+                        data['credit'] = '-'
+                trial_balance.append(data)
 
         vat_receivable, vat_payable = 0, 0
         for data in trial_balance:
@@ -332,7 +382,9 @@ class TrialBalanceView(View):
         trial_balance = sorted(trial_balance, key=lambda x:x['account_head'])
         context = {
             'trial_balance': trial_balance,
-            "total": total
+            "total": total,
+            "from_date":from_date,
+            "to_date":to_date
         }
 
         return render(request, 'accounting/trial_balance.html', context)
@@ -342,9 +394,15 @@ class ProfitAndLoss(TemplateView):
     template_name = "accounting/profit_and_loss.html"
 
     def get_context_data(self, **kwargs):
+        from_date = self.request.GET.get('fromDate', None)
+        to_date = self.request.GET.get('toDate', None)
         context = super().get_context_data(**kwargs)
-        expenses = AccountLedger.objects.filter(account_chart__account_type="Expense", total_value__gt=0)
-        revenues = AccountLedger.objects.filter(account_chart__account_type="Revenue", total_value__gt=0)
+        if from_date and to_date:
+            expenses = AccountLedger.objects.filter(account_chart__account_type="Expense", total_value__gt=0, created_at__range=[from_date, to_date])
+            revenues = AccountLedger.objects.filter(account_chart__account_type="Revenue", total_value__gt=0, created_at__range=[from_date, to_date])
+        else:
+            expenses = AccountLedger.objects.filter(account_chart__account_type="Expense", total_value__gt=0)
+            revenues = AccountLedger.objects.filter(account_chart__account_type="Revenue", total_value__gt=0)
 
         revenue_list= []
         revenue_total = 0
@@ -444,10 +502,7 @@ def end_fiscal_year(request):
                     led.total_value = 0
                     led.save()
                     # AccountSubLedger.objects.create(sub_ledger_name=f'{sub.sub_ledger_name} for {fiscal_year}', total_value=sub.total_value, ledger=accumulated_depn)
-                
-        
-        
-
+                    
         depreciations = Depreciation.objects.filter(fiscal_year=fiscal_year)
 
         org.start_year+=1

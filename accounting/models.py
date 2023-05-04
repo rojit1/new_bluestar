@@ -1,3 +1,4 @@
+from typing import Iterable, Optional
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -19,7 +20,17 @@ class AccountChart(AccountBaseModel):
 
     def __str__(self):
         return self.group
-    
+
+
+class CumulativeLedger(AccountBaseModel):
+    account_chart = models.ForeignKey(AccountChart, on_delete=models.PROTECT)
+    ledger_name = models.CharField(max_length=200)
+    total_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    value_changed = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    def __str__(self):
+        return self.ledger_name
+
 
 class AccountLedger(AccountBaseModel):
     account_chart = models.ForeignKey(AccountChart, on_delete=models.PROTECT)
@@ -29,6 +40,18 @@ class AccountLedger(AccountBaseModel):
 
     def __str__(self):
         return self.ledger_name
+    
+"""
+Signal to update Cumulative Ledger
+"""
+@receiver(post_save, sender=AccountLedger)
+def update_cumulative_ledger(sender, instance, created, **kwargs):
+    if created:
+        CumulativeLedger.objects.create(account_chart=instance.account_chart, ledger_name=instance.ledger_name, total_value=instance.total_value, value_changed=0)
+    else:
+        ledger = CumulativeLedger.objects.filter(ledger_name=instance.ledger_name).last()
+        value_changed = instance.total_value - ledger.total_value
+        CumulativeLedger.objects.create(account_chart=instance.account_chart, ledger_name=instance.ledger_name, total_value=instance.total_value, value_changed=value_changed)
     
     
 class AccountSubLedger(AccountBaseModel):
