@@ -279,68 +279,199 @@ class JournalEntryView(View):
 class TrialBalanceView(View):
 
     def filtered_view(self, from_date, to_date):
-        ledgers = CumulativeLedger.objects.filter(created_at__range=[from_date, to_date], total_value__gt=0).order_by('-created_at')
-        equity = AccountLedger.objects.filter(account_chart__account_type='Equity')
-        
+        filtered_transactions = CumulativeLedger.objects.filter(created_at__range=[from_date, to_date])
+        filtered_sum = filtered_transactions.values('ledger_name', 'account_chart__account_type').annotate(Sum('value_changed'))
         trial_balance = []
-        included_ledgers = []
-        total = {'debit_total':0, 'credit_total':0}
-        for led in ledgers:
-            data = {}
-            if led.ledger_name not in included_ledgers:
-                included_ledgers.append(led.ledger_name)
-                data['ledger']=led.ledger_name
-                account_type = led.account_chart.account_type
-                data['account_head']=account_type
 
-                if account_type in ['Asset', 'Expense']:
-                    if led.total_value > 0:
-                        data['debit'] = led.total_value
-                        total['debit_total'] += led.total_value
-                        data['credit'] = '-'
-                    else:
-                        data['credit'] = led.total_value
-                        total['credit_total'] += led.total_value
-                        data['debit'] = '-'
+        total = {'debit_total':0, 'credit_total':0}
+
+        for fil in filtered_sum:
+            data = {}
+            data['ledger'] = fil['ledger_name']
+            account_type = fil['account_chart__account_type']
+            if account_type in ['Asset', 'Expense']:
+                data['actual_value'] = fil['value_changed__sum']
+                if fil['value_changed__sum'] < 0:
+                    val = abs(fil['value_changed__sum'])
+                    data['credit'] = val
+                    data['debit'] = '-'
+                    total['credit_total'] += val
                 else:
-                    if led.total_value > 0:
-                        data['credit'] = led.total_value
-                        total['credit_total'] += led.total_value
-                        data['debit'] = '-'
-                    else:
-                        data['debit'] = led.total_value
-                        total['debit_total'] += led.total_value
-                        data['credit'] = '-'
-                trial_balance.append(data)
-        for eq in equity:
-            if eq.ledger_name not in included_ledgers:
-                trial_balance.append({
-                    'ledger':eq.ledger_name,
-                    'account_head':eq.account_chart.account_type,
-                    'debit':'-',
-                    'credit':eq.total_value
-                })
-                total['credit_total'] += eq.total_value
+                    val = fil['value_changed__sum']
+                    data['debit'] = val
+                    data['credit'] = '-'
+                    total['debit_total'] += val
+            else:
+                if fil['value_changed__sum'] < 0:
+                    val = abs(fil['value_changed__sum'])
+                    data['debit'] = val
+                    data['credit'] = '-'
+                    total['debit_total'] += val
+                else:
+                    val = fil['value_changed__sum']
+                    data['credit'] = val
+                    data['debit'] = '-'
+                    total['credit_total'] += val
+
+            if not any(d['account_type'] == account_type for d in trial_balance):
+                    trial_balance.append(
+                        {
+                            'account_type': account_type,
+                            'ledgers' : [data]
+                        }
+                    )
+            else:
+                for tb in trial_balance:
+                    if tb['account_type'] == account_type:
+                        tb['ledgers'].append(data)
+                        break
+
         return trial_balance, total
+
+    def detail_view(self, from_date, to_date):
+        all_ledgers_list = AccountLedger.objects.values_list('ledger_name', flat=True)
+        before_transactions = CumulativeLedger.objects.filter(created_at__lt=from_date, total_value__gt=0).order_by('-created_at')
+
+        trial_balance = []
+        total = {'debit_total':0, 'credit_total':0}
+
+        filtered_transactions = CumulativeLedger.objects.filter(created_at__range=[from_date, to_date])
+        filtered_sum = filtered_transactions.values('ledger_name', 'account_chart__account_type').annotate(Sum('debit_amount'), Sum('credit_amount'), Sum('value_changed'))
+
+        for fil in filtered_sum:
+            data = {}
+            data['ledger'] = fil['ledger_name']
+            account_type = fil['account_chart__account_type']
+            data['debit'] = fil['debit_amount__sum']
+            data['credit'] = fil['credit_amount__sum']
+            if account_type in ['Asset', 'Expense']:
+                if fil['value_changed__sum'] < 0:
+                    total['credit_total'] += abs(fil['value_changed__sum'])
+                else:
+                    total['debit_total'] += abs(fil['value_changed__sum'])
+            else:
+                if fil['value_changed__sum'] < 0:
+                    total['debit_total'] += abs(fil['value_changed__sum'])
+                else:
+                    total['credit_total'] += abs(fil['value_changed__sum'])
+
+
+
+            if not any(d['account_type'] == account_type for d in trial_balance):
+                    trial_balance.append(
+                        {
+                            'account_type': account_type,
+                            'ledgers' : [data]
+                        }
+                    )
+            else:
+                for tb in trial_balance:
+                    if tb['account_type'] == account_type:
+                        tb['ledgers'].append(data)
+                        break
+
+
+        included_ledgers = []
+
+        for trans in before_transactions:
+            account_type = trans.account_chart.account_type
+            if trans.ledger_name not in included_ledgers:
+                included_ledgers.append(trans.ledger_name)
+                if not any(d['account_type'] == account_type for d in trial_balance):
+                    data = {
+                        'ledger': trans.ledger_name,
+                        'opening': trans.total_value,
+                        'debit':'-',
+                        'credit':'-',
+                        'closing': trans.total_value
+                    }
+                    trial_balance.append({'account_type':account_type, 'ledgers':[data]})
+                else:
+                    for tb in trial_balance:
+                        if tb['account_type'] == account_type:
+                            if not any(d['ledger'] == trans.ledger_name for d in tb['ledgers']):
+                                tb['ledgers'].append({
+                                    'ledger': trans.ledger_name,
+                                    'opening': trans.total_value,
+                                    'debit':'-',
+                                    'credit':'-',
+                                    'closing': trans.total_value
+                                })
+                            else:
+                                for led in tb['ledgers']:
+                                    if led['ledger'] == trans.ledger_name:
+                                        led['opening'] = trans.total_value
+                                        if account_type in ['Asset', 'Expense']:
+                                            led['closing'] = trans.total_value + led['debit'] - led['credit']
+                                        else:
+                                            led['closing'] = trans.total_value + led['credit'] - led['debit']
+                                        break
+
+
+            if len(included_ledgers) >= len(all_ledgers_list):
+                break
+        print(trial_balance)
+
+        # for trans in before_transactions:
+        #     if trans.ledger_name not in included_ledgers:
+        #         included_ledgers.append(trans.ledger_name)
+        #         if not any(d['ledger'] == trans.ledger_name for d in trial_balance):
+        #             data = {
+        #                 'ledger':trans.ledger_name,
+        #                 'opening':trans.total_value,
+        #                 'debit':'-',
+        #                 'credit':'-',
+        #                 'closing':trans.total_value,
+        #             }
+        #             trial_balance.append(data)
+        #         else:
+        #             for tb in trial_balance:
+        #                 if tb['ledger'] == trans.ledger_name:
+        #                     tb['opening'] = trans.total_value
+        #                     tb['closing'] = trans.total_value + tb['actual_value']
+
+        #     if len(included_ledgers) >= len(all_ledgers_list):
+        #         break
+ 
+        return trial_balance, total
+
 
 
     def get(self, request):
         from_date = request.GET.get('fromDate', None)
         to_date = request.GET.get('toDate', None)
+        option = request.GET.get('option', None)
 
         if from_date and to_date:
-            trial_balance, total= self.filtered_view(from_date, to_date)
+            if option and option =='openclose':
+                trial_balance, total = self.detail_view(from_date, to_date)
+                context = {
+                    'trial_balance': trial_balance,
+                    "total": total,
+                    "from_date":from_date,
+                    "to_date":to_date,
+                    'openclose':True
+                }
+                return render(request, 'accounting/trial_balance.html', context)
+            else:
+                trial_balance, total= self.filtered_view(from_date, to_date)
+                context = {
+                    'trial_balance': trial_balance,
+                    "total": total,
+                    "from_date":from_date,
+                    "to_date":to_date,
+                }
 
+                return render(request, 'accounting/trial_balance.html', context)
+        
         else:
             trial_balance = []
             total = {'debit_total':0, 'credit_total':0}
             ledgers = AccountLedger.objects.filter(total_value__gt=0)
             for led in ledgers:
                 data = {}
-                data['ledger']=led.ledger_name
                 account_type = led.account_chart.account_type
-                data['account_head']=account_type
-
+                data['ledger']=led.ledger_name
                 if account_type in ['Asset', 'Expense']:
                     if led.total_value > 0:
                         data['debit'] = led.total_value
@@ -359,27 +490,37 @@ class TrialBalanceView(View):
                         data['debit'] = led.total_value
                         total['debit_total'] += led.total_value
                         data['credit'] = '-'
-                trial_balance.append(data)
+                if not any(d['account_type'] == account_type for d in trial_balance):
+                    trial_balance.append(
+                        {
+                            'account_type': account_type,
+                            'ledgers' : [data]
+                        }
+                    )
+                else:
+                    for tb in trial_balance:
+                        if tb['account_type'] == account_type:
+                            tb['ledgers'].append(data)
+                            break
+                            
+        # vat_receivable, vat_payable = 0, 0
+        # for data in trial_balance:
+        #     if data['ledger'] == 'VAT Receivable':
+        #         vat_receivable = data['debit']
+        #         total['debit_total'] -= data['debit']
+        #         trial_balance.remove(data)
+        #     if data['ledger'] == 'VAT Payable':
+        #         vat_payable = data['credit']
+        #         total['credit_total'] -= data['credit']
+        #         trial_balance.remove(data)
+        # vat_amount = vat_receivable - vat_payable
+        # if vat_amount > 0:
+        #     trial_balance.append({'ledger':'VAT', 'account_head':'Asset', 'debit':vat_amount, 'credit':'-'})
+        #     total['debit_total'] += vat_amount
+        # elif vat_amount < 0:
+        #     trial_balance.append({'ledger':'VAT', 'account_head':'Liability', 'debit':'-', 'credit':abs(vat_amount)})
+        #     total['credit_total'] += abs(vat_amount)
 
-        vat_receivable, vat_payable = 0, 0
-        for data in trial_balance:
-            if data['ledger'] == 'VAT Receivable':
-                vat_receivable = data['debit']
-                total['debit_total'] -= data['debit']
-                trial_balance.remove(data)
-            if data['ledger'] == 'VAT Payable':
-                vat_payable = data['credit']
-                total['credit_total'] -= data['credit']
-                trial_balance.remove(data)
-        vat_amount = vat_receivable - vat_payable
-        if vat_amount > 0:
-            trial_balance.append({'ledger':'VAT', 'account_head':'Asset', 'debit':vat_amount, 'credit':'-'})
-            total['debit_total'] += vat_amount
-        elif vat_amount < 0:
-            trial_balance.append({'ledger':'VAT', 'account_head':'Liability', 'debit':'-', 'credit':abs(vat_amount)})
-            total['credit_total'] += abs(vat_amount)
-
-        trial_balance = sorted(trial_balance, key=lambda x:x['account_head'])
         context = {
             'trial_balance': trial_balance,
             "total": total,

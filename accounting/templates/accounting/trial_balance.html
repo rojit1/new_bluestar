@@ -11,7 +11,9 @@
     }
 </style>
 <div class="card">
-    {% include 'components/search_filter.html' %}
+    <section>
+        {% include 'accounting/filter.html' %}
+    </section>
     <div class="card-header p-4 m-auto">
         <center>
                 <h2>Trial Balance</h2> <br>
@@ -28,29 +30,44 @@
 
 
                     <thead class="fw-bolder">
-                        <th>S.N</th>
-                        <th>Account</th>
-                        <th>Account Head</th>
+                        <th>Ledger</th>
+                        {% if openclose %}
+                            <th>Opening</th>
+                        {% endif %}
                         <th>Debit</th>
                         <th>Credit</th>
+                        {% if openclose %}
+                            <th>Closing</th>
+                        {% endif %}
                     </thead>
                     <tbody class="fw-bold text-gray-600">
                         {% for data in trial_balance %}
                         <tr>
-                            <td>{{forloop.counter}}</td>
-                            <td>{{data.ledger}}</td>
-                            <td>{{data.account_head}}</td>
-                            <td>{{data.debit|intcomma}}</td>
-                            <td>{{data.credit|intcomma}}</td>
+                            <td class="fw-bolder text-primary">{{data.account_type}}</td>
+                            {% for led in data.ledgers %}
+                                <tr style="margin-left: 50px;">
+                                    <td>{{led.ledger}}</td>
+                                    {% if openclose %}
+                                        <td>{{led.opening| intcomma }}</td>
+                                    {% endif %}
+                                    <td>{{led.debit|intcomma}}</td>
+                                    <td>{{led.credit|intcomma}}</td>
+                                    {% if openclose %}
+                                        <td> {{led.closing|intcomma}} </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
                         </tr>
                         {% endfor %}
                         <hr>
                         <tr>
-                            <td></td>
                             <td>Total</td>
-                            <td></td>
+                            {% if openclose %}
+                                <td></td>
+                            {% endif %}
                             <td><p class="fw-bolder text-primary">{{total.debit_total|intcomma}}</p> </td>
                             <td><p class="fw-bolder text-primary">{{total.credit_total|intcomma}}</p></td>
+                            <td></td>
                         </tr>
                     </tbody>
                 </table>

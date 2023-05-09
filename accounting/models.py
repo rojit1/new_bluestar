@@ -27,6 +27,8 @@ class CumulativeLedger(AccountBaseModel):
     ledger_name = models.CharField(max_length=200)
     total_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     value_changed = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    debit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    credit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def __str__(self):
         return self.ledger_name
@@ -51,7 +53,17 @@ def update_cumulative_ledger(sender, instance, created, **kwargs):
     else:
         ledger = CumulativeLedger.objects.filter(ledger_name=instance.ledger_name).last()
         value_changed = instance.total_value - ledger.total_value
-        CumulativeLedger.objects.create(account_chart=instance.account_chart, ledger_name=instance.ledger_name, total_value=instance.total_value, value_changed=value_changed)
+        if instance.account_chart.account_type in ['Asset', 'Expense']:
+            if value_changed > 0:
+                CumulativeLedger.objects.create(account_chart=instance.account_chart, ledger_name=instance.ledger_name, total_value=instance.total_value, value_changed=value_changed, debit_amount=abs(value_changed))
+            else:
+                CumulativeLedger.objects.create(account_chart=instance.account_chart, ledger_name=instance.ledger_name, total_value=instance.total_value, value_changed=value_changed, credit_amount=abs(value_changed))
+        else:
+            if value_changed > 0:
+                CumulativeLedger.objects.create(account_chart=instance.account_chart, ledger_name=instance.ledger_name, total_value=instance.total_value, value_changed=value_changed, credit_amount=abs(value_changed))
+            else:
+                CumulativeLedger.objects.create(account_chart=instance.account_chart, ledger_name=instance.ledger_name, total_value=instance.total_value, value_changed=value_changed, debit_amount=abs(value_changed))
+
     
     
 class AccountSubLedger(AccountBaseModel):
