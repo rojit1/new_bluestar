@@ -66,7 +66,7 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
         self.fields["tax_amount"].label = "VAT Amount"
         self.fields["discount_amount"].widget.attrs["readonly"] = True
         self.fields["amount_in_words"].widget.attrs["readonly"] = True
-        self.fields["debit_account"] = forms.ModelChoiceField( queryset=AccountLedger.objects.filter(account_chart=AccountChart.objects.filter(group="Purchase").first()))
+        self.fields["debit_account"] = forms.ModelChoiceField( queryset=AccountLedger.objects.filter(account_chart=AccountChart.objects.filter(group="Purchases").first()))
         self.fields["debit_account"].widget.attrs = {
             "tags":True,
             "class":"form-select",

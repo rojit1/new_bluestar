@@ -63,3 +63,20 @@ class ProductStockForm(BaseForm, forms.ModelForm):
         model = ProductStock
         fields = '__all__'
         exclude = [ 'sorting_order', 'is_featured', 'is_deleted', 'status', 'deleted_at',]
+
+from .models import BranchStock
+class BranchStockForm(BaseForm, forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['product'] = forms.ModelChoiceField(queryset=Product.objects.all())
+        self.fields["product"].widget.attrs = {
+            "class":"form-select",
+            "data-control": "select2",
+            "data-placeholder": "Select Item",
+        }
+
+    class Meta:
+        model = BranchStock
+        fields = '__all__'
+        exclude = ['is_deleted', 'status', 'deleted_at','sorting_order', 'is_featured']

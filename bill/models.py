@@ -181,6 +181,10 @@ class Bill(BaseModel):
     )
     print_count = models.PositiveIntegerField(default=1)
     # is_taxable = models.BooleanField(default=True)
+    bill_count_number = models.PositiveIntegerField(blank=True, null=True, db_index=True)   
+
+    class Meta:
+        unique_together = 'invoice_number', 'fiscal_year', 'branch'
 
     def __str__(self):
         return f"{self.customer_name}-{self.transaction_date}- {self.grand_total}"
@@ -191,7 +195,7 @@ from .utils import create_journal_for_bill
 def create_invoice_number(sender, instance, created, **kwargs):
     current_fiscal_year = Organization.objects.last().current_fiscal_year
 
-    if created:
+    if created and not instance.payment_mode.lower() == "complimentary":
         """
         Accounting Section to create Journals after Bill Create
         """

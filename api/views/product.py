@@ -4,13 +4,18 @@ from api.serializers.product import (
     CustomerProductDetailSerializer,
     CustomerProductSerializer,
     ProductSerializer,
+    BulkItemReconcilationApiItemSerializer
 )
-from rest_framework.views import exception_handler
+from rest_framework.views import APIView
 
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
-from product.models import CustomerProduct, Product,ProductMultiprice
+from product.models import CustomerProduct, Product,ProductMultiprice, BranchStock, ItemReconcilationApiItem
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+import json
+
 
 class ProductMultipriceapi(ListAPIView):
     def get(self, request):
@@ -100,3 +105,43 @@ class CustomerProductAPI(ModelViewSet):
         if self.action in detail_actions:
             return CustomerProductDetailSerializer
         return super().get_serializer_class()
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def bulk_product_requisition(request):
+    data = request.data.get('data', None)
+    if data:
+        data = json.loads(data)
+        for d in data:
+            quantity = int(d['quantity'])
+            BranchStock.objects.create(branch_id=d['branch_id'], product_id=d['product_id'], quantity=quantity)
+        return Response({'detail':'ok'}, 201)
+    return Response({'detail':'Invalid data'}, 400)
+
+
+
+from organization.models import EndDayRecord, EndDayDailyReport
+from datetime import date
+class ApiItemReconcilationView(APIView):
+
+    def post(self, request):
+        serializer = BulkItemReconcilationApiItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        EndDayRecord.objects.create(branch_id = serializer.validated_data.get('branch'),
+                                     terminal=serializer.validated_data.get('terminal'),
+                                     date = serializer.validated_data.get('date')
+                                     )
+        report_total = serializer.validated_data.get("report_total")
+        new_data = {'branch_id':serializer.validated_data.get('branch'),'terminal':serializer.validated_data.get('terminal'), **report_total}
+        EndDayDailyReport.objects.create(**new_data)
+        return Response({'details':'success'}, 201)
+    
+class CheckAllowReconcilationView(APIView):
+
+    def get(self, request):
+        today_date = date.today()
+        if ItemReconcilationApiItem.objects.filter(date=today_date).exists():
+            return Response({'detail':'Items already reconciled for today!! Please Contact Admin'}, 400)
+        return Response({'details':'ok'}, 200)

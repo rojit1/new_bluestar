@@ -17,4 +17,4 @@ class OrganizationApi(ReadOnlyModelViewSet):
 
 class BranchApi(ReadOnlyModelViewSet):
     serializer_class = BranchSerializer
-    queryset = Branch.objects.active()
+    queryset = Branch.objects.active().filter(is_central_billing=True)

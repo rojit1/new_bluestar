@@ -61,6 +61,7 @@ class Branch(BaseModel):
     branch_code = models.CharField(
         max_length=255, null=False, blank=False, unique=True, default=get_default_uuid
     )
+    is_central_billing = models.BooleanField(default=False, verbose_name='For Central Billing (Web)')
 
     def __str__(self):
         return f"{self.organization.org_name} - {self.name} Branch"
@@ -73,3 +74,61 @@ class Branch(BaseModel):
     #     super(Branch, self).save(*args, **kwargs)
 
     # return super().save(*args, **kwargs)
+
+
+class EndDayRecord(BaseModel):
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    terminal = models.CharField(max_length=10)
+    date = models.DateField()
+
+    def __str__(self):
+        return self.branch.name
+
+
+
+class MailRecipient(models.Model):
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    status = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
+class MailSendRecord(models.Model):
+    mail_recipient = models.ForeignKey(MailRecipient, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.mail_recipient.name
+
+
+class EndDayDailyReport(BaseModel):
+    employee_name = models.CharField(max_length=50)
+    net_sales = models.FloatField()
+    vat = models.FloatField()
+    total_discounts = models.FloatField()
+    cash = models.FloatField()
+    credit = models.FloatField()
+    credit_card = models.FloatField()
+    mobile_payment = models.FloatField()
+    complimentary = models.FloatField()
+    start_bill = models.CharField(max_length=20)
+    end_bill = models.CharField(max_length=20)
+    total_void_count = models.IntegerField()
+    date_time = models.CharField(max_length=100, null=True)
+    food_sale = models.FloatField()
+    beverage_sale = models.FloatField()
+    others_sale = models.FloatField()
+    no_of_guest = models.IntegerField()
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
+    terminal = models.CharField(max_length=10, null=True)
+    total_sale = models.FloatField(default=0)
+
+    def __str__(self):
+        return 'Report'
+    
+    def save(self, *args, **kwargs):
+        self.total_sale = self.net_sales + self.vat
+        return super().save()
+    
