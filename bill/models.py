@@ -147,7 +147,7 @@ post_save.connect(update_stock, sender=BillItem)
 """ **************************************** """
 
 class Bill(BaseModel):
-    fiscal_year = models.CharField(max_length=20, null=True)
+    fiscal_year = models.CharField(max_length=20)
     agent = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     agent_name = models.CharField(max_length=255, null=True)
     terminal = models.CharField(max_length=10, default="1")
@@ -207,38 +207,26 @@ def create_invoice_number(sender, instance, created, **kwargs):
 
         branch = instance.branch.branch_code
         terminal = instance.terminal
-        branch_and_terminal = f"{branch}-{terminal}"
 
         bill_number = 0 
         invoice_number = ""
         instance.fiscal_year = current_fiscal_year
-        # if current_bill_number == None:
-        #     bill_number = 1
-        # else:
-        last_bill_number = (
-            Bill.objects.filter(invoice_number__startswith=branch_and_terminal)
-            .order_by("pk")
-            .reverse()
-            .first()
-        )
-        if last_bill_number:
-            current_bill_number_pk = last_bill_number.invoice_number.split("-")[-1]
-
-            if current_bill_number_pk:
-                bill_number = int(current_bill_number_pk) 
-            else:
+        if terminal == 1:
+            last_bill = Bill.objects.filter(terminal=terminal, fiscal_year = current_fiscal_year, branch=instance.branch).order_by('-bill_count_number').first()
+            if not last_bill:
                 bill_number = 1
-            print(bill_number, "Incremented Bill Number")
+            else:
+                bill_number = last_bill.bill_count_number + 1
+
+            if branch is not None:
+                invoice_number = f"{branch}-{terminal}-{bill_number}"
+            else:
+                invoice_number = f"{terminal}-{bill_number}"
+            
+            instance.invoice_number = invoice_number
+            instance.bill_count_number=bill_number
         else:
-            bill_number = 1
-
-        if branch is not None:
-            invoice_number = f"{branch}-{terminal}-{bill_number}"
-
-        else:
-            invoice_number = f"{terminal}-{bill_number}"
-
-        instance.invoice_number = invoice_number
+            invoice_number = instance.invoice_number
 
         a = TblTaxEntry(
             fiscal_year=current_fiscal_year,
@@ -283,3 +271,19 @@ def create_invoice_number(sender, instance, created, **kwargs):
 
         a.save()
         instance.save()
+
+
+class BillPayment(BaseModel):
+    bill = models.ForeignKey(Bill, on_delete=models.PROTECT)
+    payment_mode = models.CharField(max_length=100)
+    rrn = models.CharField(max_length=100, null=True, blank=True)
+    amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+
+    def __str__(self):
+        return self.payment_mode
+    
+class ConflictBillNumber(BaseModel):
+    invoice_number = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.invoice_number

@@ -416,7 +416,7 @@ class MarkBillVoid(BillMixin, View):
 
 class BillList(BillMixin, ListView):
     template_name = "bill/bill_list.html"
-    queryset = Bill.objects.filter(is_deleted=False)
+    queryset = Bill.objects.filter(is_deleted=False).order_by('-created_at')
 
 
 class SalesInvoiceSummaryRegister(
@@ -1578,3 +1578,50 @@ class PaymentModeSummary(BillFilterDateMixin, ExportExcelMixin, ListView):
 
         wb.save(response)
         return response
+
+
+class TodaysTransactionView(View):
+
+    def get(self, request):
+        today = date.today()
+        bills = Bill.objects.filter(transaction_date=today)
+        last_update = Bill.objects.order_by('-created_at').first().created_at if Bill.objects.order_by('-created_at') else None
+        
+        terminals = {}
+        for bill in bills:
+            if bill.invoice_number:
+                bill_no_lst = bill.invoice_number.split('-')[:2]
+                terminal_no = f"{bill_no_lst[0]}-{bill_no_lst[1]}"
+                if terminal_no not in terminals:
+                    last_updated = Bill.objects.filter(invoice_number__startswith=terminal_no).order_by('-created_at').first().created_at
+                    terminals[terminal_no] = {"total_sale":0, "vat":0,
+                                            "net_sale":0, "discount":0,
+                                            "cash":0,"food":0, "beverage":0, "others":0,"credit_card":0, "mobile_payment":0, 'last_updated':last_updated }
+                
+                terminals[terminal_no]['total_sale'] += bill.grand_total
+                terminals[terminal_no]['vat'] += bill.tax_amount
+                terminals[terminal_no]['discount'] += bill.discount_amount
+                terminals[terminal_no]['net_sale'] += (bill.grand_total-bill.tax_amount)
+
+                if bill.payment_mode.lower().strip() == "cash":
+                    terminals[terminal_no]['cash'] += bill.grand_total
+                elif bill.payment_mode.lower().strip() == "credit card":
+                    terminals[terminal_no]['credit_card'] += bill.grand_total
+                elif bill.payment_mode.lower().strip() == "mobile payment":
+                    terminals[terminal_no]['mobile_payment'] += bill.grand_total
+                
+                for item in bill.bill_items.all():
+                    if item.product.category.title.lower().strip() == "food":
+                        terminals[terminal_no]['food'] += item.amount
+                    elif item.product.category.title.lower().strip() == "beverage":
+                        terminals[terminal_no]['beverage'] += item.amount
+                    elif item.product.category.title.lower().strip() == "others":
+                        terminals[terminal_no]['others'] += item.amount
+                
+
+        terminals_to_template = []
+        for k,v in terminals.items():
+            v['terminal'] = k
+            terminals_to_template.append(v)
+
+        return render(request, 'todays_transaction/todays_transaction.html', {'terminals':terminals_to_template, 'last_update':last_update})

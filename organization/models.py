@@ -1,6 +1,9 @@
 from django.db import models
 from root.utils import BaseModel, SingletonModel
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+import environ
+env = environ.Env(DEBUG=(bool, False))
 
 class StaticPage(BaseModel):
     name = models.CharField(max_length=255)
@@ -115,12 +118,7 @@ class EndDayDailyReport(BaseModel):
     complimentary = models.FloatField()
     start_bill = models.CharField(max_length=20)
     end_bill = models.CharField(max_length=20)
-    total_void_count = models.IntegerField()
     date_time = models.CharField(max_length=100, null=True)
-    food_sale = models.FloatField()
-    beverage_sale = models.FloatField()
-    others_sale = models.FloatField()
-    no_of_guest = models.IntegerField()
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     terminal = models.CharField(max_length=10, null=True)
     total_sale = models.FloatField(default=0)
@@ -131,4 +129,43 @@ class EndDayDailyReport(BaseModel):
     def save(self, *args, **kwargs):
         self.total_sale = self.net_sales + self.vat
         return super().save()
-    
+
+from .utils import send_mail_to_receipients
+from threading import Thread
+from datetime import datetime
+
+@receiver(post_save, sender=EndDayDailyReport)
+def create_profile(sender, instance, created, **kwargs):
+    if created:
+        sender = env('EMAIL_HOST_USER')
+        mail_list = []
+        recipients = MailRecipient.objects.filter(status=True)
+        for r in recipients:
+            mail_list.append(r.email)
+            MailSendRecord.objects.create(mail_recipient=r)
+        if mail_list:
+            dt_now = datetime.now()
+            date_now = dt_now.date()
+            time_now = dt_now.time().strftime('%I:%M %p')
+            org = Organization.objects.first().org_name
+            report_data = {
+                'org_name':org,
+                'date_now': date_now,
+                'time_now': time_now,
+                'total_sale': instance.total_sale,
+                'date_time':instance.date_time,
+                'employee_name': instance.employee_name,
+                'net_sales': instance.net_sales,
+                'vat': instance.vat,  
+                'total_discounts': instance.total_discounts,
+                'cash': instance.cash,
+                'credit': instance.credit,
+                'credit_card': instance.credit_card,
+                'mobile_payment': instance.mobile_payment,
+                'complimentary': instance.complimentary,
+                'start_bill': instance.start_bill,
+                'end_bill': instance.end_bill,
+                'branch': instance.branch.name,
+                'terminal': instance.terminal,
+            }
+            Thread(target=send_mail_to_receipients, args=(report_data, mail_list, sender)).start()

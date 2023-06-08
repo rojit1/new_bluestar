@@ -11,6 +11,8 @@
 
         {%include 'components/menu_item.html' with path="organization" url='org:organization_detail' title='Organization' icon="bi bi-bank" %}
         {%include 'components/menu_item.html' with path="branch" url='org:branch_list' title='Branches' icon="bi bi-diagram-2" %}
+        {%include 'components/menu_item.html' with path="mailrecipient" url='org:mailrecipient_list' title='Mail Recipients' icon="bi bi-envelope" %}
+
         
 
         {%include 'components/menu_title.html' with title="Product Management"%}
@@ -39,6 +41,8 @@
 
         {%include 'components/menu_title.html' with title="Transaction Management"%}
         {%include 'components/menu_item.html' with path="bill" url='bill_list' title='Bills' icon=" bi bi-receipt" %}
+        {%include 'components/menu_item.html' with path="todays-transaction" url='todays_transaction' title='Todays Transaction' icon=" bi bi-receipt" %}
+
 
         <div class="menu-item">
             <a class="menu-link " href="{% url 'org:outlet_name'  %}">

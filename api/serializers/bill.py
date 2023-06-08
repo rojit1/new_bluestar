@@ -29,12 +29,19 @@ class BillItemSerializer(ModelSerializer):
             "amount",
         ]
 
+from bill.models import BillPayment
+class BillPaymentSerializer(ModelSerializer):
+    class Meta:
+        model = BillPayment
+        fields = ['payment_mode', 'rrn', 'amount']
 
 class BillSerializer(ModelSerializer):
     bill_items = BillItemSerializer(many=True)
     agent = serializers.HiddenField(
         default=serializers.CurrentUserDefault(),
     )
+    split_payment = BillPaymentSerializer(many=True, write_only=True)
+
 
     class Meta:
         model = Bill
@@ -47,19 +54,25 @@ class BillSerializer(ModelSerializer):
             "is_featured",
             "organization",
         ]
-        optional_fields = [
-            "fiscal_year",
-            "invoice_number",
-        ]
 
     def create(self, validated_data):
         bill_items = []
 
         items_data = validated_data.pop("bill_items")
+        split_payment = validated_data.pop("split_payment")
+
+        payment_mode = validated_data.get('payment_mode')
+        if not payment_mode.lower() == "complimentary":
+            bill_count_no = int(validated_data.get('invoice_number').split('-')[-1])
+        else:
+            bill_count_no = None
 
         bill = Bill.objects.create(
-            **validated_data, organization=Organization.objects.last()
+            **validated_data, organization=Organization.objects.last(), bill_count_number=bill_count_no
         )
+
+        for payment in split_payment:
+            BillPayment.objects.create(bill=bill, payment_mode=payment['payment_mode'], rrn=payment['rrn'], amount=payment['amount'])
 
         
         try:

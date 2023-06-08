@@ -29,6 +29,7 @@ class ProductSerializer(ModelSerializer):
             "unit",
             "category",
             "barcode",
+            'reconcile'
         ]
 
 

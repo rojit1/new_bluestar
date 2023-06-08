@@ -111,6 +111,7 @@ class ProductPurchaseCreateView(CreateView):
         payment_mode = form_data.get('payment_mode')
         debit_account = form_data.get('debit_account')
         purchase_object = Purchase(
+            bill_no=bill_no,
             vendor_id=vendor_id,sub_total=sub_total, bill_date=bill_date,
             discount_percentage=discount_percentage,discount_amount=discount_amount,
             taxable_amount=taxable_amount, non_taxable_amount=non_taxable_amount,
@@ -316,6 +317,30 @@ class PurchaseBookListView(ExportExcelMixin,View):
         return render(request, 'purchase/purchase_book.html', context)
 
 
+
+
+class VendorWisePurchaseView(View):
+
+    def get(self, request):
+        from_date = request.GET.get('from_date')
+        to_date = request.GET.get('to_date')
+
+        vendors = { v[0]:{'id':v[1], 'name':v[0], 'purchases':[]} for v in Vendor.objects.values_list('name', 'id')}
+        if from_date and to_date:
+            purchases = ''
+        else:
+            purchases = Purchase.objects.all()
+
+        for purchase in purchases:
+            vendor = vendors.get(purchase.vendor.name)
+            vendor['purchases'].append(purchase)
+            
+        data = [i for i in vendors.values()]
+
+        return render(request, 'purchase/vendorwisepurchase.html', {'object_list':data})
+
+
+
 """  ***************   Asset Purchase  ****************  """
 
 
@@ -493,5 +518,6 @@ class AssetPurchaseCreate(CreateView):
 
         return redirect('/asset/')
     
+
 
 

@@ -44,3 +44,10 @@ class BranchForm(BaseForm, forms.ModelForm):
             "is_featured",
             "organization",
         ]
+
+from .models import MailRecipient
+
+class MailRecipientForm(BaseForm, forms.ModelForm):
+    class Meta:
+        model = MailRecipient
+        fields = '__all__'

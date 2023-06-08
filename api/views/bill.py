@@ -1,4 +1,7 @@
 from datetime import datetime
+from django.shortcuts import get_object_or_404
+from django.db.utils import IntegrityError
+
 from api.serializers.bill import (
     BillDetailSerializer,
     BillItemSerializer,
@@ -15,8 +18,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 
 
-from bill.models import Bill, PaymentType, TablReturnEntry, TblSalesEntry, TblTaxEntry
-
+from bill.models import Bill, PaymentType, TablReturnEntry, TblSalesEntry, TblTaxEntry, ConflictBillNumber
+from organization.models import Branch, Organization
 
 class PaymentTypeList(ListAPIView):
     serializer_class = PaymentTypeSerializer
@@ -29,16 +32,14 @@ class BillInfo(APIView):
         terminal = self.request.query_params.get("terminal")
         branch_and_terminal = f"{branch_code}-{terminal}"
         if not branch_code or not terminal:
-            return Response({"result": "Please enter branch code and terminal"})
-        last_bill_number = (
-            Bill.objects.filter(invoice_number__startswith=branch_and_terminal)
-            .order_by("pk")
-            .reverse()
-            .first()
-        )
+            return Response({"result": "Please enter branch code and terminal"},400)
+        branch = get_object_or_404(Branch, branch_code=branch_code)
+        current_fiscal_year = Organization.objects.last().current_fiscal_year
+        last_bill_number = Bill.objects.filter(terminal=terminal, fiscal_year = current_fiscal_year, branch=branch).order_by('-bill_count_number').first()
         if last_bill_number:
             return Response({"result": last_bill_number.invoice_number})
         return Response({"result": 0})
+
 
 
 class BillAPI(ModelViewSet):
@@ -138,3 +139,51 @@ class TblSalesEntryAPI(ModelViewSet):
 class TablReturnEntryAPI(ModelViewSet):
     serializer_class = TablReturnEntrySerializer
     queryset = TablReturnEntry.objects.all()
+
+class BulkBillCreateView(APIView):
+
+    def post(self, request):
+        bills = request.data.get('bills', [])
+        if not bills:
+            return Response({'details':"Bills is required"}, status=400)
+        conflict_invoices = []
+        for bill in bills:
+            serializer = BillSerializer(data=bill, context={'request':request})
+            if serializer.is_valid():
+                try:
+                    serializer.save()
+                except IntegrityError:
+                    return Response({'details': "Bill exists with provided details.Integrity Error"}, status=400)
+            else:
+                conflict_invoices.append(bill['invoice_number'])
+                ConflictBillNumber.objects.create(invoice_number=bill['invoice_number'])
+        if conflict_invoices:
+            return Response({'details': conflict_invoices}, status=409)
+
+        return Response({'details': 'Bills Created'}, status=201)
+
+class BillCheckSumView(APIView):
+
+    def post(self, request):
+        fiscal_year = Organization.objects.last().current_fiscal_year
+
+        bills = request.data.get('bills', [])
+        if not bills:
+            return Response({'details':"Bills is required"}, status=400)
+        new_invoice_list:list = []
+        for bill in bills:
+            invoice_num = bill.get('invoice_number', None)
+            fiscal_year = bill.get('fiscal_year', fiscal_year)
+
+            if not Bill.objects.filter(invoice_number=invoice_num, fiscal_year=fiscal_year).exists():
+                if bill.get('payment_mode').lower() == "complimentary":
+                    if Bill.objects.filter(fiscal_year=fiscal_year, transaction_date_time=bill.get('transaction_date_time')).exists():
+                        continue
+                new_invoice_list.append(invoice_num)
+                serializer = BillSerializer(data=bill, context={'request':request})
+                serializer.is_valid(raise_exception=True)
+                try:
+                    serializer.save()
+                except Exception as e:
+                    pass
+        return Response({'details': 'ok', 'created_invoices':new_invoice_list})
