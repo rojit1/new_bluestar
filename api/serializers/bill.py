@@ -68,7 +68,7 @@ class BillSerializer(ModelSerializer):
             bill_count_no = None
 
         bill = Bill.objects.create(
-            **validated_data, organization=Organization.objects.last(), bill_count_number=bill_count_no
+            **validated_data, organization=Organization.objects.last(), bill_count_number=bill_count_no, print_count=3
         )
 
         for payment in split_payment:
