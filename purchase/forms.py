@@ -3,12 +3,16 @@ from .models import Vendor, ProductPurchase
 from root.forms import BaseForm
 from product.models import Product
 from accounting.models import AccountChart, AccountLedger
-
+import datetime
 class VendorForm(BaseForm, forms.ModelForm):
     class Meta:
         model = Vendor
         fields = ['name', 'address', 'contact', 'pan_no']
 
+
+def today_ymd():
+    """Return today in format YYYY-MM-DD"""
+    return datetime.date.today().strftime('%Y-%m-%d')
 
 class ProductPurchaseForm(BaseForm, forms.ModelForm):
     DISCOUNT_PERCENTAGE_CHOICES = (
@@ -21,7 +25,7 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
         (50, 50),
 
     )
-    bill_date = forms.DateField(required=False)
+    bill_date = forms.DateField(required=False,initial=today_ymd )
     bill_no = forms.CharField(required=False, empty_value=None)
     pp_no = forms.CharField(required=False, empty_value=None)
 
@@ -61,7 +65,6 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
         self.fields["sub_total"].widget.attrs["readonly"] = True
         self.fields["taxable_amount"].widget.attrs["readonly"] = True
         self.fields["non_taxable_amount"].widget.attrs["readonly"] = True
-        self.fields["tax_amount"].widget.attrs["readonly"] = True
         self.fields["grand_total"].widget.attrs["readonly"] = True
         self.fields["tax_amount"].label = "VAT Amount"
         self.fields["discount_amount"].widget.attrs["readonly"] = True
@@ -72,6 +75,12 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
             "class":"form-select",
             "data-control": "select2",
             "data-placeholder": "Select Account",
+        }
+
+        self.fields["vendor"].widget.attrs = {
+            "class":"form-select",
+            "data-control": "select2",
+            "data-placeholder": "Select Vendor",
         }
 
     class Meta:
@@ -86,7 +95,7 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
                     "data-control": "select2",
                     "data-placeholder": "Select Product",
                 }
-            ),
+            )
         }
     
 

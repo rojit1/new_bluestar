@@ -435,8 +435,6 @@ class TrialBalanceView(View):
  
         return trial_balance, total
 
-
-
     def get(self, request):
         from_date = request.GET.get('fromDate', None)
         to_date = request.GET.get('toDate', None)
@@ -467,7 +465,7 @@ class TrialBalanceView(View):
         else:
             trial_balance = []
             total = {'debit_total':0, 'credit_total':0}
-            ledgers = AccountLedger.objects.filter(total_value__gt=0)
+            ledgers = AccountLedger.objects.filter(~Q(total_value=0))
             for led in ledgers:
                 data = {}
                 account_type = led.account_chart.account_type
@@ -478,8 +476,9 @@ class TrialBalanceView(View):
                         total['debit_total'] += led.total_value
                         data['credit'] = '-'
                     else:
-                        data['credit'] = led.total_value
-                        total['credit_total'] += led.total_value
+                        val = abs(led.total_value)
+                        data['credit'] = val
+                        total['credit_total'] += val
                         data['debit'] = '-'
                 else:
                     if led.total_value > 0:
@@ -487,8 +486,9 @@ class TrialBalanceView(View):
                         total['credit_total'] += led.total_value
                         data['debit'] = '-'
                     else:
-                        data['debit'] = led.total_value
-                        total['debit_total'] += led.total_value
+                        val = abs(led.total_value)
+                        data['debit'] = val
+                        total['debit_total'] += val
                         data['credit'] = '-'
                 if not any(d['account_type'] == account_type for d in trial_balance):
                     trial_balance.append(
@@ -577,14 +577,14 @@ class BalanceSheet(TemplateView):
 
         assets = AccountChart.objects.filter(account_type='Asset')
         for ledger in assets:
-            sub = AccountLedger.objects.filter(account_chart__group=ledger, total_value__gt=0)
+            sub = AccountLedger.objects.filter(~Q(total_value=0), account_chart__group=ledger)
             if sub:
                 asset_dict[ledger.group] = sub
 
 
         liabilities = AccountChart.objects.filter(Q(account_type="Liability") | Q(account_type="Equity") )
         for ledger in liabilities:
-            sub = AccountLedger.objects.filter(account_chart__group=ledger, total_value__gt=0)
+            sub = AccountLedger.objects.filter(~Q(total_value=0), account_chart__group=ledger)
             if sub:
                 liability_dict[ledger.group] = sub
 

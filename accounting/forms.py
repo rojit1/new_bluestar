@@ -12,13 +12,13 @@ class AccountLedgerForm(BaseForm, forms.ModelForm):
     
     class Meta:
         model = AccountLedger
-        exclude = 'is_editable', "total_value"
+        exclude = 'is_editable',
         
 
 class AccountSubLedgerForm(BaseForm, forms.ModelForm):
     class Meta:
         model = AccountSubLedger
-        exclude = 'is_editable', "total_value"
+        exclude = 'is_editable',
 
 
 class ExpenseForm(BaseForm, forms.ModelForm):
@@ -47,6 +47,7 @@ class ExpenseForm(BaseForm, forms.ModelForm):
             "data-control": "select2",
             "data-placeholder": "Select Sub Ledger",
         }
+        self.fields["sub_ledger"].required = False
 
 
 class DrJournalEntryForm(BaseForm, forms.ModelForm):

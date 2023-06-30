@@ -37,6 +37,9 @@ class ProductForm(BaseForm, forms.ModelForm):
             "description",
             "product_id",
         ]
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["price"].label = "Selling Price"
 
 
 from .models import CustomerProduct

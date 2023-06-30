@@ -31,6 +31,9 @@
                     {{item}}
                   </div>
                   {% endfor %}
+                  <div class="col-md-12">
+                    <input type="" class="form-control" id="search-product">
+                  </div>
                   <div>
                     <div class="table-responsive mb-8" >
                       <table class="table align-middle gs-0 gy-4 my-0">
@@ -84,10 +87,34 @@
 <script src="{% static 'js/num2words.js' %}"></script>
 <script type="text/javascript">
 
-$(document).ready(function() {
-   $('#id_').focus();
-   $('#div-id_grand_total').num2words();
-}); 
+  $(document).ready(function() {
+    $('#id_').focus();
+    $('#div-id_grand_total').num2words();
+  }); 
+
+  $('#search-product').select2({
+    placeholder:'Search Items',
+  })
+
+  let checkBoxes = document.querySelectorAll('input[type=checkbox]');
+  for(let cb of checkBoxes){
+    let newOption = new Option(cb.parentElement.innerText, cb.value, false, false);
+    $('#search-product').append(newOption).trigger('change');
+  }
+
+  $('#search-product').on('select2:select', function (e) {
+    let selectedData = e.params.data;
+    let id = selectedData.id
+    for (let i = 0; i < checkBoxes.length; i++) {
+      if(checkBoxes[i].value == id){
+        checkBoxes[i].checked = true
+        checkBoxes[i].click
+        handleClick(checkBoxes[i])
+        break;
+      }
+    }
+
+  });
 
   $('#id_is_taxable').change(function(){
           $('#id_is_taxable').val($(this).is(':checked'));
@@ -190,6 +217,8 @@ $(document).ready(function() {
   
 
   async function handleClick(e) {
+    $('#search-product').val([]).trigger("change"); 
+    // $('#search-product').select2('val', '')
       const id = e.value
       let billItem = await getBillItem(id)
       if(e.checked){
@@ -200,6 +229,7 @@ $(document).ready(function() {
           calculatePrices()
       }
   }
+
   async function handleRateChange(e){
       const id = e.id.split('_')[4]
       const quantity = $(`#id_bill_item_quantity_${id}`).val()

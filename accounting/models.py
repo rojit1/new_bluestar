@@ -119,21 +119,21 @@ class Expense(AccountBaseModel):
         return f"Expense @ {self.amount}"
     
 @receiver(post_save, sender=Expense)
-def create_journal_for_expense(sender, instance, **kwargs):
+def create_journal_for_expense(sender, instance, created, **kwargs):
+    if created:
     
-    journal = TblJournalEntry.objects.create(employee_name="From expense form", journal_total=instance.amount)
-    TblDrJournalEntry.objects.create(ledger=instance.ledger, debit_amount=instance.amount, particulars=f"Automatic: {instance.ledger.ledger_name} a/c Dr", journal_entry=journal)
-    TblCrJournalEntry.objects.create(ledger=instance.credit_ledger, credit_amount=instance.amount, particulars=f"Automatic: To {instance.credit_ledger.ledger_name}", journal_entry=journal)
-    
-    instance.ledger.total_value += instance.amount
-    instance.ledger.save()
+        journal = TblJournalEntry.objects.create(employee_name="From expense form", journal_total=instance.amount)
+        TblDrJournalEntry.objects.create(ledger=instance.ledger, debit_amount=instance.amount, particulars=f"Automatic: {instance.ledger.ledger_name} a/c Dr", journal_entry=journal)
+        TblCrJournalEntry.objects.create(ledger=instance.credit_ledger, credit_amount=instance.amount, particulars=f"Automatic: To {instance.credit_ledger.ledger_name}", journal_entry=journal)
+        instance.ledger.total_value += instance.amount
+        instance.ledger.save()
 
-    if instance.sub_ledger:
-        instance.sub_ledger.total_value += instance.amount
-        instance.sub_ledger.save()
+        if instance.sub_ledger:
+            instance.sub_ledger.total_value += instance.amount
+            instance.sub_ledger.save()
 
-    instance.credit_ledger.total_value -= instance.amount
-    instance.credit_ledger.save()
+        instance.credit_ledger.total_value -= instance.amount
+        instance.credit_ledger.save()
 
 
 class Depreciation(AccountBaseModel):

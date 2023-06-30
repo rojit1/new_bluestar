@@ -104,7 +104,7 @@ $(document).ready(function() {
    $('#div-id_grand_total').num2words();
 }); 
 
-  function calculatePrices(){
+  function calculatePrices(taxEdited=false){
           let taxableAmount = 0
           let nonTaxableAmount = 0
           let idarray = $("#bill_item .text-end")
@@ -143,11 +143,15 @@ $(document).ready(function() {
 
           $('#id_taxable_amount').val(taxableAmount.toFixed(2))
           $('#id_non_taxable_amount').val(nonTaxableAmount.toFixed(2))
-          
-          const vatAmount = parseFloat(0.13 * taxableAmount)
-          $('#id_tax_amount').val(vatAmount.toFixed(2))
+          let vatAmount = parseFloat(0.13 * taxableAmount).toFixed(2)
+          if(taxEdited){
 
-          $('#id_grand_total').val(parseFloat(taxableAmount+nonTaxableAmount+vatAmount).toFixed(2))
+            vatAmount =  parseFloat($('#id_tax_amount').val()).toFixed(2)
+
+          }
+          $('#id_tax_amount').val(vatAmount)
+
+          $('#id_grand_total').val(parseFloat(taxableAmount+nonTaxableAmount+parseFloat(vatAmount)).toFixed(2))
 
     $('#id_grand_total').keyup();
   }
@@ -291,6 +295,10 @@ $(document).ready(function() {
 
  $('#id_discount_percentage').on('change', function() {
      calculatePrices()
+  })
+
+  $('#id_tax_amount').on('change', function(e) {
+    calculatePrices(taxEdited=true)
   })
 
 

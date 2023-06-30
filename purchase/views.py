@@ -150,7 +150,7 @@ class ProductPurchaseCreateView(CreateView):
         vendor_detail = str(vendor.pk)+' '+ vendor_name
         self.create_accounting(debit_account_id=debit_account, payment_mode=payment_mode, username=self.request.user.username, sub_total=sub_total, tax_amount=tax_amount, vendor=vendor_detail)
 
-        return redirect('/purchase/create/' )
+        return redirect('/purchase/')
     
 
 
@@ -299,13 +299,12 @@ class PurchaseBookListView(ExportExcelMixin,View):
         return_entry_sum = dict()
         grand_total = dict()
 
-        if purchase_entry and return_entry:
+        if purchase_entry:
             purchase_entry_sum = purchase_entry.aggregate(Sum('amount'), Sum('tax_amount'), Sum('non_tax_purchase'))
+        if return_entry:
             return_entry_sum = return_entry.aggregate(Sum('amount'), Sum('tax_amount'), Sum('non_tax_purchase'))
-
             for key in purchase_entry_sum.keys():
                 grand_total[key] = purchase_entry_sum[key] - return_entry_sum[key]
-
 
         context = {'purchase_entry':purchase_entry, 'return_entry':return_entry,
                     'purchase_entry_sum':purchase_entry_sum, 'return_entry_sum': return_entry_sum, 'grand_total': grand_total}
@@ -315,8 +314,6 @@ class PurchaseBookListView(ExportExcelMixin,View):
 
 
         return render(request, 'purchase/purchase_book.html', context)
-
-
 
 
 class VendorWisePurchaseView(View):
