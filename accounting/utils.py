@@ -23,3 +23,23 @@ def calculate_depreciation(amount, percentage, bill_date):
     else:
         depreciation_amount = (amount*(percentage/100))*2/3
     return depreciation_amount, bs_date
+
+
+class ProfitAndLossData():
+
+    @staticmethod
+    def get_data(revenues, expenses):
+        revenue_list= []
+        revenue_total = 0
+        expense_list= []
+        expense_total = 0
+
+        for revenue in revenues:
+            revenue_list.append({'title':revenue.ledger_name, 'amount': revenue.total_value})
+            revenue_total += revenue.total_value
+
+        for expense in expenses:
+            expense_list.append({'title':expense.ledger_name, 'amount': expense.total_value})
+            expense_total += expense.total_value
+
+        return expense_list, expense_total, revenue_list, revenue_total

@@ -71,7 +71,7 @@
                 {{ledger}}
               </span>
                 <a href="{% url 'subledger_create' %}?ledgerType={{ledger}}" class="bi bi-plus fa-lg"></a>
-                <small class="fw-bolder d-none"><u>{{ledger.total_value}}</u></small>
+                <small class="fw-bolder d-none"><u>{{ledger.total_value}} <a href="{% url 'accountledger_update' ledger.pk  %}"><i class="fa fa-edit"></i></a> </u></small>
 
                 {% if ledger.accountsubledger_set.count > 0 %}
                 <ul class="subledger-ul d-none">

@@ -12,6 +12,7 @@ from organization.models import Organization
 from rest_framework.response import Response
 from accounting.utils import calculate_depreciation
 from rest_framework.decorators import api_view
+from .utils import ProfitAndLossData
 
 class AccountChartMixin:
     model = AccountChart
@@ -539,24 +540,14 @@ class ProfitAndLoss(TemplateView):
         to_date = self.request.GET.get('toDate', None)
         context = super().get_context_data(**kwargs)
         if from_date and to_date:
-            expenses = AccountLedger.objects.filter(account_chart__account_type="Expense", total_value__gt=0, created_at__range=[from_date, to_date])
-            revenues = AccountLedger.objects.filter(account_chart__account_type="Revenue", total_value__gt=0, created_at__range=[from_date, to_date])
+            expenses = AccountLedger.objects.filter(~Q(total_value=0), account_chart__account_type="Expense", created_at__range=[from_date, to_date])
+            revenues = AccountLedger.objects.filter(~Q(total_value=0), account_chart__account_type="Revenue", created_at__range=[from_date, to_date])
         else:
-            expenses = AccountLedger.objects.filter(account_chart__account_type="Expense", total_value__gt=0)
-            revenues = AccountLedger.objects.filter(account_chart__account_type="Revenue", total_value__gt=0)
+            expenses = AccountLedger.objects.filter(~Q(total_value=0), account_chart__account_type="Expense")
+            revenues = AccountLedger.objects.filter(~Q(total_value=0), account_chart__account_type="Revenue")
 
-        revenue_list= []
-        revenue_total = 0
-        expense_list= []
-        expense_total = 0
+        expense_list, expense_total, revenue_list, revenue_total = ProfitAndLossData.get_data(revenues=revenues, expenses=expenses)
 
-        for revenue in revenues:
-            revenue_list.append({'title':revenue.ledger_name, 'amount': revenue.total_value})
-            revenue_total += revenue.total_value
-
-        for expense in expenses:
-            expense_list.append({'title':expense.ledger_name, 'amount': expense.total_value})
-            expense_total += expense.total_value
 
         context['expenses'] = expense_list
         context['expense_total'] = expense_total
@@ -593,18 +584,21 @@ class BalanceSheet(TemplateView):
                                     .aggregate(Sum('total_value')).get('total_value__sum')
         
 
-        if asset_total and liability_total:
-            if asset_total > liability_total:
-                context['lib_retained_earnings'] =  asset_total-liability_total
-                context['liability_total'] = liability_total + asset_total-liability_total
-                context['asset_total'] = asset_total
+        """"""
+        expenses = AccountLedger.objects.filter(~Q(total_value=0), account_chart__account_type="Expense")
+        revenues = AccountLedger.objects.filter(~Q(total_value=0), account_chart__account_type="Revenue")
+        _, expense_total, _, revenue_total = ProfitAndLossData.get_data(revenues=revenues, expenses=expenses)
+        """"""
 
-            else:
-                context['asset_retained_earnings'] =  liability_total-asset_total
-                context['asset_total'] = asset_total + liability_total-asset_total
-                context['liability_total'] = liability_total
-            
-
+        if revenue_total > expense_total:
+            context['lib_retained_earnings'] =  revenue_total
+            liability_total +=  revenue_total
+        else:
+            context['asset_retained_earnings'] =  expense_total
+            asset_total +=  expense_total
+        
+        context['asset_total'] = asset_total
+        context['liability_total'] = liability_total
         context['assets'] = asset_dict
         context['liabilities'] =  liability_dict
 
@@ -675,7 +669,6 @@ def end_fiscal_year(request):
             asset_ledger = AccountSubLedger.objects.get(sub_ledger_name=depn.item.asset.title, ledger__account_chart__account_type='Asset')
             asset_ledger.total_value -= depreciation_amount
             asset_ledger.save()
-        
         
         return Response({})
 

@@ -95,8 +95,8 @@
   $('#search-product').select2({
     placeholder:'Search Items',
   })
-
-  let checkBoxes = document.querySelectorAll('input[type=checkbox]');
+  let productSection = document.getElementById('div-id_product')
+  let checkBoxes = productSection.querySelectorAll('input[type=checkbox]');
   for(let cb of checkBoxes){
     let newOption = new Option(cb.parentElement.innerText, cb.value, false, false);
     $('#search-product').append(newOption).trigger('change');

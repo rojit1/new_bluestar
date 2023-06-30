@@ -45,7 +45,11 @@
                                 {% for item in v %}
                                 <tr>
                                     <td class="px-8">{{ item.ledger_name }}</td>
-                                    <td>{{ item.total_value|intcomma }}</td>
+                                    {% if item.total_value < 0 %}
+                                        <td>({{ item.total_value|get_abs }})</td>
+                                    {% else %}
+                                        <td>{{ item.total_value|intcomma }}</td>
+                                    {% endif %}
 
                                 </tr>
                                 {% endfor %}

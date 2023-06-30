@@ -15,7 +15,7 @@ urlpatterns += [
 path('accountledger/', AccountChartList.as_view(), name='accountledger_list'),
 path('accountledger/<int:pk>/', AccountLedgerDetail.as_view(), name='accountledger_detail'),
 path('accountledger/create/', AccountLedgerCreate.as_view(), name='accountledger_create'),
-# path('accountledger/<int:pk>/update/', AccountLedgerUpdate.as_view(), name='accountledger_update'),
+path('accountledger/<int:pk>/update/', AccountLedgerUpdate.as_view(), name='accountledger_update'),
 # path('accountledger/delete', AccountLedgerDelete.as_view(), name='accountledger_delete'),
 ]
 
