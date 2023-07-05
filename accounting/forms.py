@@ -13,12 +13,23 @@ class AccountLedgerForm(BaseForm, forms.ModelForm):
     class Meta:
         model = AccountLedger
         exclude = 'is_editable',
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['ledger_name'].disabled=True
+        self.fields['account_chart'].disabled=True
+
         
 
 class AccountSubLedgerForm(BaseForm, forms.ModelForm):
     class Meta:
         model = AccountSubLedger
         exclude = 'is_editable',
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['ledger'].disabled=True
+        self.fields['sub_ledger_name'].disabled=True
 
 
 class ExpenseForm(BaseForm, forms.ModelForm):

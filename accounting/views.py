@@ -62,7 +62,7 @@ class AccountChartDelete(AccountChartMixin, DeleteMixin, View):
     pass
 
 
-from .models import AccountLedger
+from .models import AccountLedger, AccountSubLedger
 from .forms import AccountLedgerForm
 class AccountLedgerMixin:
     model = AccountLedger
@@ -93,6 +93,11 @@ class AccountSubLedgerCreate(CreateView):
     template_name = "accounting/subledger/create.html"
     form_class = AccountSubLedgerForm
     success_url = reverse_lazy('accountchart_list')
+
+class AccountSubLedgerUpdate(UpdateView):
+    form_class = AccountSubLedgerForm
+    queryset = AccountSubLedger.objects.all()
+    template_name = "update.html"
 
 from .models import Expense
 from .forms import ExpenseForm

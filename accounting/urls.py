@@ -19,9 +19,10 @@ path('accountledger/<int:pk>/update/', AccountLedgerUpdate.as_view(), name='acco
 # path('accountledger/delete', AccountLedgerDelete.as_view(), name='accountledger_delete'),
 ]
 
-from .views import AccountSubLedgerCreate
+from .views import AccountSubLedgerCreate, AccountSubLedgerUpdate
 urlpatterns += [
-    path('accountsubledger/create/', AccountSubLedgerCreate.as_view(), name="subledger_create")
+    path('accountsubledger/create/', AccountSubLedgerCreate.as_view(), name="subledger_create"),
+    path('accountsubledger/<int:pk>/update/', AccountSubLedgerUpdate.as_view(), name="subledger_update"),
 ]
 
 from .views import ExpenseList,ExpenseDetail,ExpenseCreate,ExpenseUpdate,ExpenseDelete
