@@ -15,6 +15,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 import json
+from django.shortcuts import get_object_or_404
+from organization.models import Branch
 
 
 class ProductMultipriceapi(ListAPIView):
@@ -142,6 +144,10 @@ class CheckAllowReconcilationView(APIView):
 
     def get(self, request):
         today_date = date.today()
-        if ItemReconcilationApiItem.objects.filter(date=today_date).exists():
+        branch_id = request.GET.get('branch_id', None)
+        if not branch_id:
+            return Response({'detail':'Please provide branch_id in url params'}, 400)
+        branch = get_object_or_404(Branch, pk=branch_id)
+        if ItemReconcilationApiItem.objects.filter(date=today_date, branch = branch).exists():
             return Response({'detail':'Items already reconciled for today!! Please Contact Admin'}, 400)
         return Response({'details':'ok'}, 200)

@@ -9,13 +9,16 @@ from accounting.utils import calculate_depreciation
 from root.utils import DeleteMixin
 from product.models import Product
 from organization.models import Organization
-from product.models import ProductStock
+from product.models import ProductStock, ProductCategory
 from .forms import VendorForm, ProductPurchaseForm
 from .models import Vendor, ProductPurchase, Purchase, TblpurchaseEntry, TblpurchaseReturn
 import decimal
 from bill.views import ExportExcelMixin
+import json
+from django.db.utils import IntegrityError
+from user.permission import IsAdminMixin
 
-class VendorMixin:
+class VendorMixin(IsAdminMixin):
     model = Vendor
     form_class = VendorForm
     paginate_by = 10
@@ -47,7 +50,7 @@ class VendorDelete(VendorMixin, DeleteMixin, View):
 '''  -------------------------------------    '''
 
 
-class ProductPurchaseCreateView(CreateView):
+class ProductPurchaseCreateView(IsAdminMixin, CreateView):
     model = ProductPurchase
     form_class = ProductPurchaseForm
     template_name = "purchase/purchase_create.html"
@@ -79,13 +82,13 @@ class ProductPurchaseCreateView(CreateView):
             TblDrJournalEntry.objects.create(journal_entry=journal_entry, particulars="Automatic: VAT Receivable A/c Dr.", debit_amount=tax_amount, ledger=vat_receivable)
             vat_receivable.total_value += tax_amount
             vat_receivable.save()
-        if payment_mode == "Credit":
+        if payment_mode.lower().strip() == "credit":
             try:
                 vendor_ledger = AccountLedger.objects.get(ledger_name=vendor)
                 vendor_ledger.total_value += total_amount
                 vendor_ledger.save()
             except AccountLedger.DoesNotExist:
-                chart = AccountChart.objects.get(group='Sundry Creditors')
+                chart = AccountChart.objects.get(group__iexact='Sundry Creditors')
                 vendor_ledger = AccountLedger.objects.create(ledger_name=vendor, total_value=total_amount, is_editable=True, account_chart=chart)
             TblCrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"Automatic: To {vendor_ledger.ledger_name} A/c", credit_amount=total_amount, ledger=vendor_ledger)
         else:
@@ -93,9 +96,11 @@ class ProductPurchaseCreateView(CreateView):
             cash_ledger.total_value -= total_amount
             cash_ledger.save()
 
-
+    def form_invalid(self, form) -> HttpResponse:
+        return self.form_valid(form)
+    
     def form_valid(self, form):
-        form_data = form.data
+        form_data = form.data 
         bill_no = form_data.get('bill_no', None)
         bill_date = form_data.get('bill_date', None)
         pp_no = form_data.get('pp_no',None)
@@ -121,6 +126,14 @@ class ProductPurchaseCreateView(CreateView):
         purchase_object.save()
 
         product_ids =  form_data.get('product_id_list', '')
+        product_taxable_info = form_data.get('product_taxable_info', '')
+        product_category_info = form_data.get('product_category_info', '')
+
+        new_items_name = {}
+        new_product_categories = {}
+        if product_taxable_info and len(product_taxable_info) > 0:
+            new_items_name = json.loads(product_taxable_info)
+            new_product_categories = json.loads(product_category_info)
 
         item_name = ''
 
@@ -132,16 +145,42 @@ class ProductPurchaseCreateView(CreateView):
         if product_ids:
             product_ids = product_ids.split(',')
 
+
         for id in product_ids:
-            id = int(id)
-            quantity = int(form_data.get(f'id_bill_item_quantity_{id}'))
-            total_quantity += quantity
-            prod = Product.objects.get(pk=id)
-            item_name += prod.title +'-'+ str(quantity) + ', '
-            rate = float(form_data.get(f'id_bill_item_rate_{id}'))
-            item_total = quantity * rate
-            self.create_subledgers(prod, item_total, debit_account)
-            ProductPurchase.objects.create(product_id=id, purchase=purchase_object, quantity=quantity, rate=rate, item_total=item_total)
+            try:
+                id = int(id)                
+                quantity = int(form_data.get(f'id_bill_item_quantity_{id}'))
+                total_quantity += quantity
+                prod = Product.objects.get(pk=id)
+                item_name += prod.title +'-'+ str(quantity) + ', '
+                rate = float(form_data.get(f'id_bill_item_rate_{id}'))
+                item_total = quantity * rate
+                self.create_subledgers(prod, item_total, debit_account)
+                ProductPurchase.objects.create(product_id=id, purchase=purchase_object, quantity=quantity, rate=rate, item_total=item_total)
+            except ValueError:
+                pass
+
+        if new_items_name:
+            for k, v in new_items_name.items():
+                category_name = new_product_categories.get(k, '').lower().strip()
+                if ProductCategory.objects.filter(title__iexact=category_name).exists():
+                    category = ProductCategory.objects.filter(title__iexact=category_name).first()
+                else:
+                    try:
+                        ProductCategory.objects.create(title=category_name)
+                    except IntegrityError:
+                        pass
+                category = ProductCategory.objects.filter(title__iexact=category_name).first()
+                rate = float(form_data.get(f'id_bill_item_rate_{k}'))
+                quantity = int(form_data.get(f'id_bill_item_quantity_{k}'))
+                item_total = quantity * rate
+                is_taxable = True if (v == "true" or v == True) else False
+                try:
+                    prod = Product.objects.create(category=category, title=k, is_taxable=is_taxable, price=rate)
+                except IntegrityError:
+                    prod = Product.objects.get(title__iexact=k)
+                self.create_subledgers(prod, item_total, debit_account)
+                ProductPurchase.objects.create(product=prod, purchase=purchase_object, quantity=quantity, rate=rate, item_total=item_total)
 
         TblpurchaseEntry.objects.create(
             bill_no=bill_no, bill_date=bill_date, pp_no=pp_no, vendor_name=vendor_name, vendor_pan=vendor_pan,
@@ -154,13 +193,13 @@ class ProductPurchaseCreateView(CreateView):
     
 
 
-class PurchaseListView(ListView):
+class PurchaseListView(IsAdminMixin, ListView):
     model = Purchase
     queryset = Purchase.objects.filter(is_deleted=False)
     template_name = 'purchase/purchase_list.html'
 
 
-class PurchaseDetailView(DetailView):
+class PurchaseDetailView(IsAdminMixin, DetailView):
     template_name = 'purchase/purchase_detail.html'
     queryset = Purchase.objects.filter(is_deleted=False)
 
@@ -172,7 +211,7 @@ class PurchaseDetailView(DetailView):
 
 
 
-class MarkPurchaseVoid(View):
+class MarkPurchaseVoid(IsAdminMixin, View):
 
     def post(self, request, *args, **kwargs):
         id = self.kwargs.get('pk')
@@ -213,7 +252,7 @@ class MarkPurchaseVoid(View):
 
 """ View starting for Purchase Book  """
 
-class PurchaseBookListView(ExportExcelMixin,View):
+class PurchaseBookListView(IsAdminMixin, ExportExcelMixin,View):
 
     def export_to_excel(self, data):
         response = HttpResponse(content_type="application/ms-excel")
@@ -316,7 +355,7 @@ class PurchaseBookListView(ExportExcelMixin,View):
         return render(request, 'purchase/purchase_book.html', context)
 
 
-class VendorWisePurchaseView(View):
+class VendorWisePurchaseView(IsAdminMixin, View):
 
     def get(self, request):
         from_date = request.GET.get('from_date')
@@ -344,7 +383,7 @@ class VendorWisePurchaseView(View):
 from .models import AssetPurchase, Asset, AssetPurchaseItem
 from .forms import AssetPurchaseForm
 
-class AssetPurchaseMixin:
+class AssetPurchaseMixin(IsAdminMixin):
     model = AssetPurchase
     form_class = AssetPurchaseForm
     paginate_by = 10
@@ -365,7 +404,7 @@ class AssetPurchaseUpdate(AssetPurchaseMixin, UpdateView):
 # class AssetPurchaseDelete(AssetPurchaseMixin, DeleteMixin, View):
 #     pass
 
-class AssetPurchaseCreate(CreateView):
+class AssetPurchaseCreate(IsAdminMixin, CreateView):
     model = AssetPurchase
     form_class = AssetPurchaseForm
     template_name = "assetpurchase/assetpurchase_create.html"

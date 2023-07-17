@@ -23,7 +23,7 @@ from .forms import OrganizationForm, StaticPageForm
 from .models import Organization, StaticPage
 
 
-class IndexView(IsAdminMixin, TemplateView):
+class IndexView(TemplateView):
     template_name = "index.html"
 
 
@@ -206,7 +206,7 @@ class MailRecipientMixin:
     model = MailRecipient
     form_class = MailRecipientForm
     paginate_by = 10
-    queryset = MailRecipient.objects.filter(status=True)
+    queryset = MailRecipient.objects.all()
     success_url = reverse_lazy('org:mailrecipient_list')
 
 class MailRecipientList(MailRecipientMixin, ListView):

@@ -19,8 +19,12 @@
 {% if not object.status %}
     {% include './_bill_card.html' with object=object name="Sales Return" id="invoice-card" %}
 {% elif object.print_count == 1 %}
-    {% include './_bill_card.html' with object=object name="Tax Invoice" id="tax-invoice-card" %}
-    {% include './_bill_card.html' with object=object name="Invoice" id="invoice-card" %}
+    {% if object.payment_mode|lower == "complimentary" %}
+        {% include './_bill_card.html' with object=object name="Complimentary" id="invoice-card" %}
+    {% else %}
+        {% include './_bill_card.html' with object=object name="Tax Invoice" id="tax-invoice-card" %}
+        {% include './_bill_card.html' with object=object name="Invoice" id="invoice-card" %}
+    {% endif %}
 {% else %}
     {% include './_bill_card.html' with object=object name="Invoice" id="invoice-card" %}
 {% endif %}
@@ -30,14 +34,20 @@
    <div class="my-1 me-5">
       <!-- begin::Pint-->
 
-      {% if not object.status %}
-          <button type="button" class="btn btn-success my-1 me-12" onclick="printDiv('invoice-card', {{object.pk}});">Print Invoice</button>
-      {% elif object.print_count == 1 %}
-          <button type="button" class="btn btn-success my-1 me-12" onclick="printDiv('tax-invoice-card', {{object.pk}});">Print Tax Invoice</button>
-          <button type="button" class="btn btn-success my-1 me-12" onclick="printDiv('invoice-card', {{object.pk}});">Print Invoice</button>
-      {% else %}
-          <button type="button" class="btn btn-success my-1 me-12" onclick="printDiv('invoice-card', {{object.pk}});">Print Invoice</button>
-      {% endif %}
+    {% if not object.status %}
+        <button type="button" class="btn btn-success my-1 me-12" onclick="printDiv('invoice-card', {{object.pk}});">Print Invoice</button>
+    {% elif object.print_count == 1 %}
+        {% if object.payment_mode|lower == "complimentary" %}
+            {% else %}
+            <button type="button" class="btn btn-success my-1 me-12" onclick="printDiv('tax-invoice-card', {{object.pk}});">Print Tax Invoice</button>
+            <button type="button" class="btn btn-success my-1 me-12" onclick="printDiv('invoice-card', {{object.pk}});">Print Invoice</button>
+        {% endif %}
+    {% else %}
+        <button type="button" class="btn btn-success my-1 me-12" onclick="printDiv('invoice-card', {{object.pk}});">Print Invoice</button>
+    {% endif %}
+
+
+
       {% if object.status %}
          <button type="button" class="btn btn-danger my-1 me-12"  data-bs-toggle="modal" data-bs-target="#kt_modal_1" >Void Invoice</button>
       {% endif %}

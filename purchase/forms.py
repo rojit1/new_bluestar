@@ -83,20 +83,12 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
             "data-placeholder": "Select Vendor",
         }
 
+
     class Meta:
         model = ProductPurchase
         fields = [
             "product",
         ]
-        widgets = {
-            "product": forms.Select(
-                attrs={
-                    "class": "form-select",
-                    "data-control": "select2",
-                    "data-placeholder": "Select Product",
-                }
-            )
-        }
     
 
 """  Asset Purchase  """

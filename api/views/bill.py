@@ -71,7 +71,8 @@ class TblTaxEntryUpdateView(APIView):
         serializer = TblTaxEntryVoidSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         trans_date = serializer.validated_data.get('trans_date')
-
+        org = Organization.objects.first()
+        fiscal_year = org.current_fiscal_year
         try:
             bill_date = trans_date[:10]
             bill_date = datetime.strptime(bill_date, "%Y-%m-%d").date()
@@ -89,15 +90,16 @@ class TblTaxEntryUpdateView(APIView):
         reason = serializer.validated_data.get("reason")
 
 
-        if is_active_data == "no":
+        if is_active_data == "no": 
             miti = ""
             quantity = 1
             try:
-                obj = TblSalesEntry.objects.get(bill_no=instance.bill_no, customer_pan=instance.customer_pan )
+                # obj = TblSalesEntry.objects.get(bill_no=instance.bill_no, customer_pan=instance.customer_pan )
 
                 obj = Bill.objects.get(
                     invoice_number=instance.bill_no,
                     customer_tax_number=instance.customer_pan,
+                    fiscal_year=fiscal_year
                 )
                 obj.status = False
                 obj.save()

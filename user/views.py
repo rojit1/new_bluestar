@@ -14,7 +14,7 @@ from django.views.generic import (
     View,
 )
 from root.utils import DeleteMixin, remove_from_DB
-from user.permission import IsAdminMixin
+from user.permission import IsAdminMixin, AdminBillingMixin
 
 from .forms import UserCreateForm, UserForm, AdminForm
 
@@ -24,7 +24,7 @@ User = get_user_model()
 
 class UserMixin(IsAdminMixin):
     model = User
-    form_class = AdminForm
+    form_class = UserCreateForm
     paginate_by = 50
     queryset = User.objects.filter(status=True)
     success_url = reverse_lazy("user:user_list")
@@ -33,7 +33,7 @@ class UserMixin(IsAdminMixin):
 
 class UserList(UserMixin, ListView):
     template_name = "user/user_list.html"
-    queryset = User.objects.filter(is_superuser=True, status=True, is_deleted=False)
+    queryset = User.objects.filter(status=True, is_deleted=False)
 
     def get_queryset(self, *args, **kwargs):
         queryset = self.queryset.exclude(id=self.request.user.id)
@@ -48,23 +48,22 @@ class UserCreate(UserMixin, CreateView):
     template_name = "create.html"
 
     def form_valid(self, form):
-        form.instance.is_superuser = True
-        form.instance.is_staff = True
+        form.instance.is_superuser = False
+        form.instance.is_staff = False
         form.instance.organization = self.request.user.organization
-
         object = form.save()
-        FLASK_URL = env("FLASK_USER_CREATE_URL")
-        TOKEN = env("FLASK_USER_CREATE_KEY")
-        data= {
-            "token":TOKEN,
-            "username": object.username,
-            "baseURL":self.request.scheme+'://'+self.request.get_host()
-        }
-        requests.post(
-            FLASK_URL,
-            json=data
-        )
-        group = Group.objects.get(name="admin")
+        # FLASK_URL = env("FLASK_USER_CREATE_URL")
+        # TOKEN = env("FLASK_USER_CREATE_KEY")
+        # data= {
+        #     "token":TOKEN,
+        #     "username": object.username,
+        #     "baseURL":self.request.scheme+'://'+self.request.get_host()
+        # }
+        # requests.post(
+        #     FLASK_URL,
+        #     json=data
+        # )
+        group, _ = Group.objects.get_or_create(name='billing_group')
         object.groups.add(group)
         return super().form_valid(form)
         
@@ -81,22 +80,19 @@ class UserUpdate(UserMixin, UpdateView):
         self.object = self.get_object()
         old_username = self.object.username
         p = super().post(request, *args, **kwargs)
-        FLASK_URL = env("FLASK_USER_UPDATE_URL")
-        TOKEN = env("FLASK_USER_CREATE_KEY")
-        data= {
-            "token":TOKEN,
-            "username":old_username,
-            "newUsername": request.POST.get('username'),
-            "baseURL":request.scheme+'://'+request.get_host(),
-            "type":"UPDATE"
-        }
-        response = requests.post(
-            FLASK_URL,
-            json=data
-        )
-
-        import pdb
-        pdb.set_trace()
+        # FLASK_URL = env("FLASK_USER_UPDATE_URL")
+        # TOKEN = env("FLASK_USER_CREATE_KEY")
+        # data= {
+        #     "token":TOKEN,
+        #     "username":old_username,
+        #     "newUsername": request.POST.get('username'),
+        #     "baseURL":request.scheme+'://'+request.get_host(),
+        #     "type":"UPDATE"
+        # }
+        # response = requests.post(
+        #     FLASK_URL,
+        #     json=data
+        # )
         return p
         
 
@@ -128,7 +124,7 @@ from .models import Customer
 from .forms import CustomerForm
 
 
-class CustomerMixin(IsAdminMixin):
+class CustomerMixin(AdminBillingMixin):
     model = Customer
     form_class = CustomerForm
     paginate_by = 50

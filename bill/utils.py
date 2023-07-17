@@ -2,15 +2,57 @@ from accounting.models import AccountChart, AccountLedger, TblCrJournalEntry, Tb
 from accounting.models import AccountSubLedger, AccountLedger, AccountChart
 from purchase.models import AccountProductTracking
 from decimal import Decimal
+from product.models import Product
+
+
+def create_journal_for_complimentary(instance):
+    grand_total = Decimal(instance.sub_total)
+    complimentary_sales = AccountLedger.objects.get(ledger_name__iexact='complimentary sales')
+    complimentary_expenses = AccountLedger.objects.get(ledger_name__iexact='complimentary expenses')
+
+    journal_entry = TblJournalEntry.objects.create(employee_name='Created automatically during sale', journal_total=grand_total)
+    TblDrJournalEntry.objects.create(particulars="Complimentary Expenses A/C Dr.", debit_amount = grand_total, journal_entry=journal_entry, ledger=complimentary_expenses)
+    TblCrJournalEntry.objects.create(particulars="To Complimentary Sales", credit_amount = grand_total, journal_entry=journal_entry, ledger=complimentary_sales)
+    
+    complimentary_expenses.total_value += grand_total
+    complimentary_expenses.save()
+
+    complimentary_sales.total_value += grand_total
+    complimentary_sales.save()
+
 
 def create_journal_for_bill(instance):
-    payment_mode = instance.payment_mode
+    payment_mode = instance.payment_mode.lower().strip()
     grand_total = Decimal(instance.grand_total)
     tax_amount = Decimal(instance.tax_amount)
+    discount_amount = Decimal(instance.discount_amount)
 
-    if payment_mode == 'Credit':
-        account_chart = AccountChart.objects.get(group='Sundry Debtors')
+    sale_ledger = AccountLedger.objects.get(ledger_name='Sales')
+    journal_entry = TblJournalEntry.objects.create(employee_name='Created Automatically during Sale', journal_total=(grand_total-discount_amount))
+
+
+    if discount_amount > 0:
+        discount_expenses = AccountLedger.objects.get(ledger_name__iexact='Discount Expenses')
+        discount_sales = AccountLedger.objects.get(ledger_name__iexact='Discount Sales')
+
+        TblDrJournalEntry.objects.create(particulars="Discount Expenses A/C Dr.", debit_amount = discount_amount, journal_entry=journal_entry, ledger=discount_expenses)
+        TblCrJournalEntry.objects.create(particulars="To Discount Sales", credit_amount = discount_amount, journal_entry=journal_entry, ledger=discount_sales)
         
+        discount_expenses.total_value += discount_amount
+        discount_expenses.save()
+
+        discount_sales.total_value += discount_amount
+        discount_sales.save()
+
+
+    if tax_amount > 0:
+        vat_payable = AccountLedger.objects.get(ledger_name='VAT Payable')
+        vat_payable.total_value = vat_payable.total_value + tax_amount
+        vat_payable.save()
+        TblCrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"To VAT Payable", ledger=vat_payable, credit_amount=tax_amount)
+
+    if payment_mode == 'credit':
+        account_chart = AccountChart.objects.get(group='Sundry Debtors')
         try:
             dr_ledger = AccountLedger.objects.get(ledger_name=f'{instance.customer.pk} - {instance.customer.name}')
             dr_ledger.total_value += grand_total
@@ -18,53 +60,51 @@ def create_journal_for_bill(instance):
         except AccountLedger.DoesNotExist:
             dr_ledger = AccountLedger.objects.create(ledger_name=f'{instance.customer.pk} - {instance.customer.name}', account_chart=account_chart, total_value=grand_total)
 
-        journal_entry = TblJournalEntry.objects.create(employee_name='Created Automatically during Sale', journal_total=grand_total)
         TblDrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"{instance.customer.name} A/C Dr", ledger=dr_ledger, debit_amount=grand_total)
         TblCrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"To Sales", ledger=sale_ledger, credit_amount=(grand_total-tax_amount))
-        sale_ledger.total_value += (grand_total-tax_amount)
-        sale_ledger.save()
-        if tax_amount > 0:
-            vat_payable = AccountLedger.objects.get(ledger_name='VAT Payable')
-            vat_payable.total_value = vat_payable.total_value + tax_amount
-            vat_payable.save()
-            TblCrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"To VAT Payable", ledger=vat_payable, credit_amount=tax_amount)
-    elif payment_mode == "Credit Card":
+        
+        
+    elif payment_mode == "credit card":
         card_transaction_ledger = AccountLedger.objects.get(ledger_name='Card Transactions')
-        journal_entry = TblJournalEntry.objects.create(employee_name='Created Automatically during Sale', journal_total=grand_total)
         TblDrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"Card Transaction A/C Dr", ledger=card_transaction_ledger, debit_amount=grand_total)
-        TblCrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"To Sales", ledger=sale_ledger, credit_amount=grand_total)
-
+        TblCrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"To Sales", ledger=sale_ledger, credit_amount=(grand_total-tax_amount))
         card_transaction_ledger.total_value += grand_total
         card_transaction_ledger.save()
 
-        sale_ledger.total_value += grand_total
-        sale_ledger.save()
-    else:
-        
+
+    elif payment_mode == "mobile payment":
+        mobile_payment = AccountLedger.objects.get(ledger_name='Mobile Payments')
+
+        TblDrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"Mobile Payment A/C Dr", ledger=mobile_payment, debit_amount=grand_total)
+        TblCrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"To Sales", ledger=sale_ledger, credit_amount=(grand_total-tax_amount))
+        mobile_payment.total_value += grand_total
+        mobile_payment.save()
+
+
+    elif payment_mode == "cash":
         cash_ledger = AccountLedger.objects.get(ledger_name='Cash-In-Hand')
         cash_ledger.total_value = cash_ledger.total_value + grand_total
         cash_ledger.save()
 
-        sale_ledger = AccountLedger.objects.get(ledger_name='Sales')
-        sale_ledger.total_value = sale_ledger.total_value+(grand_total-tax_amount)
-        sale_ledger.save()
+        TblDrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"Cash A/C Dr", ledger=cash_ledger, debit_amount=grand_total)
+        TblCrJournalEntry.objects.create(journal_entry=journal_entry, particulars=f"To Sales", ledger=sale_ledger, credit_amount=(grand_total-tax_amount))
 
-        vat_payable = AccountLedger.objects.get(ledger_name='VAT Payable')
-        vat_payable.total_value = vat_payable.total_value + tax_amount
-        vat_payable.save()
+    sale_ledger.total_value += (grand_total-tax_amount)
+    sale_ledger.save()
 
-        journal_entry = TblJournalEntry.objects.create(employee_name='Created Automatically during Sale', journal_total=grand_total)
-        TblDrJournalEntry.objects.create(journal_entry=journal_entry, ledger=cash_ledger, debit_amount=grand_total)
-        TblCrJournalEntry.objects.create(journal_entry=journal_entry, ledger=sale_ledger, credit_amount=(grand_total-tax_amount))
-        TblCrJournalEntry.objects.create(journal_entry=journal_entry, ledger=vat_payable, credit_amount=tax_amount)
 
+def update_subledger_after_updating_product(product_id, initial_name, updated_name):
+    product = Product.objects.get(pk=product_id)
+    subledgername = f'{initial_name} ({product.category.title})'
+    AccountSubLedger.objects.filter(sub_ledger_name=subledgername).update(sub_ledger_name=f"{updated_name} ({product.category.title})")
+    
 
 def product_sold(instance):
-
     product = instance.product
     subledgername = f'{product.title} ({product.category.title})'
     quantity_sold = int(instance.product_quantity)
     inventory_expenses_ledger, created = AccountLedger.objects.get_or_create(ledger_name='Inventory Expenses')
+    
     sub = AccountSubLedger.objects.get(sub_ledger_name=subledgername, ledger__account_chart__account_type='Asset')
 
     expenses_subledger, _ = AccountSubLedger.objects.get_or_create(sub_ledger_name=subledgername, ledger=inventory_expenses_ledger)

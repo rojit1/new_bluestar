@@ -1,3 +1,4 @@
+{% load check_group %}
 <div class="aside-menu flex-column-fluid">
     <!--begin::Aside Menu-->
     <div class="hover-scroll-overlay-y my-2 py-5 py-lg-8" id="kt_aside_menu_wrapper" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_aside_logo, #kt_aside_footer" data-kt-scroll-wrappers="#kt_aside_menu" data-kt-scroll-offset="0">
@@ -8,7 +9,7 @@
                 <span class="menu-section text-muted text-uppercase fs-8 ls-1">Dashboard</span>
             </div>
         </div>
-
+        {% if request.user|has_group:"admin" %} 
         {%include 'components/menu_item.html' with path="organization" url='org:organization_detail' title='Organization' icon="bi bi-bank" %}
         {%include 'components/menu_item.html' with path="branch" url='org:branch_list' title='Branches' icon="bi bi-diagram-2" %}
         {%include 'components/menu_item.html' with path="mailrecipient" url='org:mailrecipient_list' title='Mail Recipients' icon="bi bi-envelope" %}
@@ -43,16 +44,6 @@
         {%include 'components/menu_item.html' with path="bill" url='bill_list' title='Bills' icon=" bi bi-receipt" %}
         {%include 'components/menu_item.html' with path="todays-transaction" url='todays_transaction' title='Todays Transaction' icon=" bi bi-receipt" %}
 
-
-        <div class="menu-item">
-            <a class="menu-link " href="{% url 'org:outlet_name'  %}">
-                <span class="menu-icon bi bi-receipt">
-                    <i class=" fs-3"></i>
-                </span>
-                <span class="menu-title"> Dot Connect Portal</span>
-            </a>
-        </div>
-
         {%include 'components/menu_title.html' with title="IRD"%}
         {%include 'components/menu_item.html' with path="sales" url='tblsalesentry_list' title='Sales Entry' icon=" bi bi-receipt" %}
         {%include 'components/menu_item.html' with path="tax" url='tbltaxentry_list' title='Materialized view' icon=" bi bi-receipt" %}
@@ -81,11 +72,24 @@
 
         {%include 'components/menu_title.html' with title="User Management"%}
         
-        {%include 'components/menu_item.html' with path="user" url='user:user_list' title='Admins' icon="bi bi-person-check" %}
+        {%include 'components/menu_item.html' with path="user" url='user:user_list' title='Create User' icon="bi bi-person-check" %}
         {%include 'components/menu_item.html' with path="agent" url='user:agent_list' title='Agents' icon="bi bi-person-badge" %}
         {%include 'components/menu_item.html' with path="customer" url='user:customer_list' title='Customers' icon="bi bi-people" %}
+        {% else %}
+            {%include 'components/menu_title.html' with title="Customer Management"%}
+            {%include 'components/menu_item.html' with path="customer" url='user:customer_list' title='Customers' icon="bi bi-people" %}
 
-        
+            {%include 'components/menu_title.html' with title="Bill Management"%}
+            {%include 'components/menu_item.html' with path="bill" url='bill_list' title='Bills' icon=" bi bi-receipt" %}
+
+            {%include 'components/menu_title.html' with title="Sales Report"%}
+            {%include 'components/menu_item.html' with path="sales" url='tblsalesentry_list' title='Sales Entry' icon=" bi bi-receipt" %}
+            {%include 'components/menu_item.html' with path="tax" url='tbltaxentry_list' title='Materialized view' icon=" bi bi-receipt" %}
+            {% comment %}
+            {%include 'components/menu_item.html' with path="return" url='tablreturnentry_list' title='Bill Return' icon=" bi bi-receipt" %}
+            {% endcomment %}
+            {%include 'components/menu_item.html' with path="salebook" url='materialized_view' title='Sales Book' icon=" bi bi-receipt" %}
+        {% endif %}
 
         </div>
         <!--end::Menu-->

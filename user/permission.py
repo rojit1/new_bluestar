@@ -83,6 +83,14 @@ class IsAdminMixin(SearchMixin, object):
         if request.user.is_authenticated:
             if request.user.groups.filter(name="admin").exists():
                 return super().dispatch(request, *args, **kwargs)
+            return redirect(reverse_lazy("bill_list"))
+        return redirect(reverse_lazy("user:login_view"))
+
+class AdminBillingMixin(SearchMixin, BillFilterMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if request.user.groups.filter(name__in=["admin", "billing_group"]).exists():
+                return super().dispatch(request, *args, **kwargs)
         return redirect(reverse_lazy("user:login_view"))
 
 

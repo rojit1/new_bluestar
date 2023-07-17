@@ -9,7 +9,7 @@ from organization.models import Organization
 from product.models import Product, ProductStock
 from root.utils import BaseModel
 from django.db.models.signals import post_save
-from .utils import product_sold
+from .utils import product_sold, create_journal_for_complimentary, create_journal_for_bill
 
 
 User = get_user_model()
@@ -22,10 +22,10 @@ class TblTaxEntry(models.Model):
     customer_name = models.CharField(max_length=200, null=True)
     customer_pan = models.CharField(max_length=200, null=True)
     bill_date = models.DateField(null=True)
-    amount = models.FloatField(null=True)
-    discount = models.FloatField(null=True)
-    taxable_amount = models.FloatField(null=True)
-    tax_amount = models.FloatField(null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    taxable_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_printed = models.CharField(max_length=20, default="Yes")
     is_active = models.CharField(max_length=20, default="Yes")
     printed_time = models.CharField(null=True, max_length=20)
@@ -34,7 +34,7 @@ class TblTaxEntry(models.Model):
     is_realtime = models.CharField(max_length=20, default="Yes")
     sync_with_ird = models.CharField(max_length=20, default="Yes")
     payment_method = models.CharField(null=True, max_length=20, default="Cash")
-    vat_refund_amount = models.FloatField(default=0.0)
+    vat_refund_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     transaction_id = models.CharField(null=True, max_length=20)
     unit = models.CharField(default="-", max_length=20)
 
@@ -51,11 +51,11 @@ class TblSalesEntry(models.Model):
     bill_no = models.CharField(null=True, max_length=20)
     customer_name = models.CharField(max_length=200, null=True)
     customer_pan = models.CharField(max_length=200, null=True)
-    amount = models.FloatField(null=True, default=0.0)
-    NoTaxSales = models.FloatField(default=0.0)
-    ZeroTaxSales = models.FloatField(default=0.0)
-    taxable_amount = models.FloatField(null=True, default=0.0)
-    tax_amount = models.FloatField(null=True, default=0.0)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    NoTaxSales = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ZeroTaxSales = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    taxable_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     miti = models.CharField(null=True, max_length=20)
     ServicedItem = models.CharField(max_length=20, default="Goods")
     quantity = models.PositiveIntegerField(default=1)
@@ -79,11 +79,11 @@ class TablReturnEntry(models.Model):
     bill_no = models.CharField(null=True, max_length=20)
     customer_name = models.CharField(max_length=200, null=True)
     customer_pan = models.CharField(max_length=200, null=True)
-    amount = models.FloatField(null=True, default=0.0)
-    NoTaxSales = models.FloatField(default=0.0)
-    ZeroTaxSales = models.FloatField(default=0.0)
-    taxable_amount = models.FloatField(null=True, default=0.0)
-    tax_amount = models.FloatField(null=True, default=0.0)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    NoTaxSales = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ZeroTaxSales = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    taxable_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     miti = models.CharField(null=True, max_length=20)
     ServicedItem = models.CharField(max_length=20, default="Goods")
     quantity = models.PositiveIntegerField(default=1)
@@ -109,7 +109,7 @@ class PaymentType(BaseModel):
     slug = models.SlugField(unique=True, verbose_name="Payment Type Slug")
 
     def __str__(self):
-        return self.title
+        return self.title 
 
 
 class BillItem(BaseModel):
@@ -118,11 +118,9 @@ class BillItem(BaseModel):
         max_length=255, verbose_name="Product Title", null=True
     )
     product_quantity = models.PositiveBigIntegerField(default=1)
-    rate = models.FloatField(default=0.0)
+    rate = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     unit_title = models.CharField(max_length=50, null=True)
-    amount = models.FloatField(
-        default=0.0,
-    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     is_taxable = models.BooleanField(default=True)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
 
@@ -159,12 +157,12 @@ class Bill(BaseModel):
     transaction_date = models.DateField(auto_now_add=True)
 
     transaction_miti = models.CharField(max_length=255, null=True, blank=True)
-    sub_total = models.FloatField(default=0.0)
-    discount_amount = models.FloatField(default=0.0)
-    taxable_amount = models.FloatField(default=0.0)
-    tax_amount = models.FloatField(default=0.0)
-    grand_total = models.FloatField(default=0.0)
-    service_charge = models.FloatField(default=0.0)
+    sub_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    taxable_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    grand_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    service_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     invoice_number = models.CharField(max_length=255, null=True, blank=True)
     amount_in_words = models.TextField(null=True, blank=True)
@@ -189,11 +187,18 @@ class Bill(BaseModel):
     def __str__(self):
         return f"{self.customer_name}-{self.transaction_date}- {self.grand_total}"
 
-from .utils import create_journal_for_bill
-
 @receiver(post_save, sender=Bill)
 def create_invoice_number(sender, instance, created, **kwargs):
     current_fiscal_year = Organization.objects.last().current_fiscal_year
+    if created and instance.payment_mode.lower().strip() == "complimentary":
+        instance.tax_amount = 0
+        instance.taxable_amount = 0
+        instance.discount_amount = 0
+        instance.save()
+        try:
+            create_journal_for_complimentary(instance)
+        except Exception as e:
+            pass
 
     if created and not instance.payment_mode.lower() == "complimentary":
         """

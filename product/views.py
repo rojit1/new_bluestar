@@ -1,3 +1,4 @@
+from django.forms.models import BaseModelForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.utils import IntegrityError
@@ -13,7 +14,7 @@ from root.utils import DeleteMixin
 from user.permission import IsAdminMixin
 from .models import ProductCategory
 from .forms import ProductCategoryForm
-
+from bill.utils import update_subledger_after_updating_product
 
 class ProductCategoryMixin(IsAdminMixin):
     model = ProductCategory
@@ -49,7 +50,7 @@ class ProductCategoryDelete(ProductCategoryMixin, DeleteMixin, View):
 
 
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -91,6 +92,13 @@ class ProductCreate(ProductMixin, CreateView):
 
 class ProductUpdate(ProductMixin, UpdateView):
     template_name = "update.html"
+
+    def form_valid(self, form):
+        updated_name = form.data.get('title')
+        product_id = form.initial.get('id')
+        initial_name = form.initial.get('title')
+        update_subledger_after_updating_product(product_id=product_id, initial_name=initial_name, updated_name=updated_name)
+        return super().form_valid(form)
 
 
 class ProductDelete(ProductMixin, DeleteMixin, View):

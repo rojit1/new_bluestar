@@ -27,7 +27,7 @@ from datetime import datetime, date
 
 
 from root.utils import DeleteMixin
-from user.permission import IsAccountantMixin, IsAdminMixin, BillFilterMixin
+from user.permission import IsAccountantMixin, IsAdminMixin, BillFilterMixin, AdminBillingMixin
 from .models import Bill, BillItem, TablReturnEntry
 from .forms import BillForm, BillItemFormset
 from .resources import (
@@ -221,7 +221,7 @@ class ExportExcelMixin(BranchMixin):
         return wb, ws, row_num, font_style_normal, font_style_bold
 
 
-class BillMixin(IsAdminMixin):
+class BillMixin(AdminBillingMixin):
     model = Bill
     form_class = BillForm
     paginate_by = 50
@@ -236,9 +236,9 @@ class BillMixin(IsAdminMixin):
 
     def get_queryset(self, *args, **kwargs):
         qc = super().get_queryset(*args, **kwargs)
-        # qc = self.search(qc)
-        # qc = self.date_filter(qc)
-        # qc = self.terminalSearch(qc)
+        qc = self.search(qc)
+        qc = self.date_filter(qc)
+        qc = self.terminalSearch(qc)
         return qc
 
     def date_filter(self, qc):
@@ -408,6 +408,12 @@ class MarkBillVoid(BillMixin, View):
             reason=reason,
         )
         return_entry.save()
+        try:
+            entry = TblTaxEntry.objects.get(bill_no=bill.invoice_number)
+            entry.is_active="NO"
+            entry.save()
+        except Exception:
+            pass
 
         return redirect(
             reverse_lazy("bill_detail", kwargs={"pk": self.kwargs.get("id")})
@@ -520,14 +526,19 @@ class BillCreate(BillMixin, CreateView):
     def form_valid(self, form):
         nepali_today = nepali_datetime.date.today()
         form.instance.organization = self.request.user.organization
-        form.instance.branch = Branch.objects.active().last()
+        if Branch.objects.active().filter(is_central_billing=True).last():
+            form.instance.branch = Branch.objects.active().filter(is_central_billing=True).last()
+        else:
+            form.instance.branch = Branch.objects.active().last()
         form.instance.transaction_miti = nepali_today
         form.instance.agent = self.request.user
         form.instance.agent_name = self.request.user.full_name
         form.instance.terminal = 1
         self.object = form.save()
+        if form.instance.payment_mode.lower() == 'credit':
+            if not form.instance.customer:
+                return self.form_invalid(form)
         context = self.get_context_data()
-
         self.save_bill_item_attributes()
         return super().form_valid(form)
 
@@ -595,7 +606,7 @@ from .forms import TblTaxEntryForm
 
 
 # this is materialize view
-class TblTaxEntryMixin(IsAccountantMixin):
+class TblTaxEntryMixin(AdminBillingMixin):
     model = TblTaxEntry
     form_class = TblTaxEntryForm
     paginate_by = 50
@@ -666,7 +677,7 @@ from .models import TblSalesEntry
 from .forms import TblSalesEntryForm
 
 
-class TblSalesEntryMixin(IsAccountantMixin):
+class TblSalesEntryMixin(AdminBillingMixin):
     model = TblSalesEntry
     form_class = TblSalesEntryForm
     paginate_by = 50
@@ -716,7 +727,7 @@ from .models import TablReturnEntry
 from .forms import TablReturnEntryForm
 
 
-class TablReturnEntryMixin(IsAccountantMixin):
+class TablReturnEntryMixin(AdminBillingMixin):
     model = TablReturnEntry
     form_class = TablReturnEntryForm
     paginate_by = 50
@@ -809,7 +820,7 @@ class TablReturnEntryDelete(TablReturnEntryMixin, DeleteMixin, View):
 
 # this is for sales book
 class MaterializedView(
-    ExportExcelMixin, SalesSummaryMixin, IsAccountantMixin, TemplateView
+    ExportExcelMixin, SalesSummaryMixin, AdminBillingMixin, TemplateView
 ):
     template_name = "bill/materialized_view.html"
     filter_by_queryset = False

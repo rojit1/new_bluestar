@@ -17,7 +17,7 @@ class BillForm(BaseForm, forms.ModelForm):
         required=True,
     )
     product = forms.ModelMultipleChoiceField(
-        queryset=Product.objects.active().order_by('title'),
+        queryset=Product.objects.active().filter(is_billing_item=True).order_by('title'),
         widget=forms.CheckboxSelectMultiple,
         required=False,
     )
@@ -48,6 +48,7 @@ class BillForm(BaseForm, forms.ModelForm):
                 "Customer <a href='%s' a>Create</a>" % reverse("user:customer_create")
             )
         )
+        self.fields["customer"].required = False 
 
     class Meta:
 
